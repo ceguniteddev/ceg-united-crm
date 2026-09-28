@@ -57,7 +57,7 @@ export function ScreenpopCard({
         <div className="pop-facts">
           <span>{scores}</span>
           <span>
-            {profile?.billing.status
+            {profile?.billing?.status
               ? t(
                   (
                     {
@@ -68,7 +68,7 @@ export function ScreenpopCard({
                       trial: "Trial",
                       unknown: "Unknown",
                     } as const
-                  )[profile.billing.status],
+                  )[profile.billing.status] || "Unknown",
                 )
               : t("MembershipPending")}
           </span>

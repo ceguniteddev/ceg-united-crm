@@ -330,9 +330,15 @@ export interface BrainProfile {
   business: {
     name: string | null;
     ein: string | null;
+    state?: string | null;
     entityType: string | null;
-    annualRevenue: number | null;
     industry: string | null;
+    naics?: string | null;
+    timeInBusiness?: string | null;
+    annualRevenue: number | null;
+    monthlyDeposits?: number | null;
+    businessCredit?: string | null;
+    duns?: string | null;
   };
   billing: {
     status:
@@ -341,11 +347,19 @@ export interface BrainProfile {
       | "failed"
       | "canceled"
       | "trial"
-      | "unknown";
-    planName: string;
-    amount: number;
-    interval: "month" | "year";
+      | "unknown"
+      | null;
+    planName: string | null;
+    amount: number | null;
+    interval?: "month" | "year" | null;
     nextBillDate: ISODate | null;
+    lastPaidAt?: ISODate | null;
+    lifetimeValue?: number | null;
+    paymentMethod?: string | null;
+    paymentHistory?: {
+      monthLabel: string;
+      status: "paid" | "unpaid" | "upcoming" | "empty";
+    }[];
   };
   enrollments: {
     programId: string;

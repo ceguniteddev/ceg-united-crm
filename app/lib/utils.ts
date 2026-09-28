@@ -64,6 +64,22 @@ export const date = (v?: string | null, locale: "en" | "es" = "en"): string => {
   }
 };
 
+export const fullDate = (
+  v?: string | null,
+  locale: "en" | "es" = "en",
+): string => {
+  if (!v) return "—";
+  try {
+    return new Date(v).toLocaleDateString(locale === "es" ? "es-ES" : "en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+};
+
 export const relative = (
   v?: string | null,
   locale: "en" | "es" = "en",

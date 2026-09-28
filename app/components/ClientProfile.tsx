@@ -3,7 +3,7 @@
 import React from "react";
 import type { CrmClient } from "../types/crm";
 import { useI18n } from "../lib/i18n";
-import { money, initials } from "../lib/utils";
+import { money, initials, fullDate } from "../lib/utils";
 import { useCrmStore } from "../store/crmStore";
 import { useAuth } from "../provider/AuthContext";
 import { CreditGauge } from "./CreditGauge";
@@ -21,7 +21,7 @@ export function ClientProfile({
   onCall,
   onCompose,
 }: ClientProfileProps) {
-  const { t, labels } = useI18n();
+  const { t, labels, locale } = useI18n();
   const { adminUser } = useAuth();
   const {
     appSettings,
@@ -118,7 +118,7 @@ export function ClientProfile({
           <div>
             <small>{t("Membership")}</small>
             <b className="sm">
-              {profile?.billing.status
+              {profile?.billing?.status
                 ? t(
                     (
                       {
@@ -129,7 +129,7 @@ export function ClientProfile({
                         trial: "Trial",
                         unknown: "Unknown",
                       } as const
-                    )[profile.billing.status],
+                    )[profile.billing.status] || "—",
                   )
                 : "—"}
             </b>
@@ -182,58 +182,467 @@ export function ClientProfile({
 
         {/* Business Overview */}
         <section className="card">
-          <div className="card-head">
-            <h3>{t("Business")}</h3>
+          <div
+            className="card-head"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <h3
+              style={{
+                textTransform: "uppercase",
+                fontSize: "11px",
+                letterSpacing: "0.08em",
+                color: "#94a3b8",
+                margin: 0,
+              }}
+            >
+              {t("Business")}
+            </h3>
+            {(profile?.business?.entityType || profile?.business?.state) && (
+              <span
+                style={{
+                  padding: "2px 10px",
+                  borderRadius: "9999px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#cbd5e1",
+                  background: "rgba(30, 41, 59, 0.8)",
+                  border: "1px solid rgba(51, 65, 85, 0.8)",
+                }}
+              >
+                {[profile?.business?.entityType, profile?.business?.state]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
           </div>
-          <div className="kv">
-            <span>{t("Business")}</span>
-            <b>{profile?.business.name || "—"}</b>
+
+          <div style={{ marginTop: "6px" }}>
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#ffffff",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {profile?.business?.name || "—"}
+            </div>
+            {(profile?.business?.industry || profile?.business?.naics) && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "4px",
+                  flexWrap: "wrap",
+                }}
+              >
+                {profile?.business?.industry && (
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#94a3b8",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {profile.business.industry}
+                  </span>
+                )}
+                {profile?.business?.naics && (
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      color: "#94a3b8",
+                      background: "rgba(30, 41, 59, 0.9)",
+                      border: "1px solid rgba(51, 65, 85, 0.6)",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    NAICS {profile.business.naics}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-          <div className="kv">
-            <span>EIN</span>
-            <b>{profile?.business.ein || t("Restricted")}</b>
-          </div>
-          <div className="kv">
-            <span>{t("StateRegion")}</span>
-            <b>{profile?.business.entityType || "—"}</b>
-          </div>
-          <div className="kv">
-            <span>{t("LifetimeValue")}</span>
-            <b>{money(profile?.business.annualRevenue)} / yr</b>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "14px 16px",
+              marginTop: "18px",
+              paddingTop: "2px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("TimeInBusiness")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.business?.timeInBusiness || "—"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("AnnualRevenue")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.business?.annualRevenue != null
+                  ? money(profile.business.annualRevenue)
+                  : "—"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("BusinessCredit")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.business?.businessCredit || "—"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("MonthlyDeposits")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.business?.monthlyDeposits != null
+                  ? money(profile.business.monthlyDeposits)
+                  : profile?.business?.annualRevenue
+                    ? money(Math.round(profile.business.annualRevenue / 12))
+                    : "—"}
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Billing & Membership */}
+        {/* Payment Status (Billing & Membership) */}
         <section className="card">
-          <div className="card-head">
-            <h3>{t("BillingMembership")}</h3>
+          <div
+            className="card-head"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <h3
+              style={{
+                textTransform: "uppercase",
+                fontSize: "11px",
+                letterSpacing: "0.08em",
+                color: "#94a3b8",
+                margin: 0,
+              }}
+            >
+              {t("PaymentStatus")}
+            </h3>
+            {profile?.billing?.status && (
+              <span
+                className={`pay-pill ${profile.billing.status}`}
+                style={{
+                  margin: 0,
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                }}
+              >
+                ●{" "}
+                {t(
+                  (
+                    {
+                      current: "Current",
+                      past_due: "PastDueStatus",
+                      failed: "Failed",
+                      canceled: "Canceled",
+                      trial: "Trial",
+                      unknown: "Unknown",
+                    } as const
+                  )[profile.billing.status],
+                )}
+              </span>
+            )}
           </div>
-          {profile?.billing.status && (
-            <span className={`pay-pill ${profile.billing.status}`}>
-              ●{" "}
-              {t(
-                (
-                  {
-                    current: "Current",
-                    past_due: "PastDueStatus",
-                    failed: "Failed",
-                    canceled: "Canceled",
-                    trial: "Trial",
-                    unknown: "Unknown",
-                  } as const
-                )[profile.billing.status],
-              )}
+
+          <div
+            style={{
+              marginTop: "6px",
+              display: "flex",
+              alignItems: "baseline",
+              gap: "8px",
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#ffffff",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {profile?.billing?.planName || "—"}
             </span>
-          )}
-          <div className="kv">
-            <span>{t("Plan")}</span>
-            <b>{profile?.billing.planName || "—"}</b>
+            {profile?.billing?.amount != null && (
+              <span
+                style={{
+                  fontSize: "14px",
+                  color: "#94a3b8",
+                  fontWeight: 500,
+                }}
+              >
+                {money(profile.billing.amount)}/{t("PerMonth")}
+              </span>
+            )}
           </div>
-          <div className="kv">
-            <span>{t("NextPayment")}</span>
-            <b>
-              {money(profile?.billing.amount)} / {t("PerMonth")}
-            </b>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "14px 16px",
+              marginTop: "18px",
+              paddingTop: "2px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("NextCharge")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.billing?.nextBillDate
+                  ? fullDate(profile.billing.nextBillDate, locale)
+                  : "—"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("LastPaid")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.billing?.lastPaidAt
+                  ? fullDate(profile.billing.lastPaidAt, locale)
+                  : "—"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("LifetimeValue")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.billing?.lifetimeValue != null
+                  ? money(profile.billing.lifetimeValue)
+                  : "—"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#64748b",
+                }}
+              >
+                {t("Method")}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  marginTop: "3px",
+                }}
+              >
+                {profile?.billing?.paymentMethod || "—"}
+              </div>
+            </div>
+          </div>
+
+          {/* 12-Month Payment History Track */}
+          <div style={{ marginTop: "16px", paddingTop: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "4px",
+                alignItems: "center",
+                width: "100%",
+              }}
+            >
+              {(
+                profile?.billing?.paymentHistory || [
+                  { monthLabel: "O", status: "empty" },
+                  { monthLabel: "N", status: "empty" },
+                  { monthLabel: "D", status: "empty" },
+                  { monthLabel: "J", status: "empty" },
+                  { monthLabel: "F", status: "empty" },
+                  { monthLabel: "M", status: "empty" },
+                  { monthLabel: "A", status: "empty" },
+                  { monthLabel: "M", status: "empty" },
+                  { monthLabel: "J", status: "empty" },
+                  { monthLabel: "J", status: "empty" },
+                  { monthLabel: "A", status: "empty" },
+                  { monthLabel: "S", status: "empty" },
+                ]
+              ).map((item, idx) => {
+                const isPaid = item.status === "paid";
+                const isUpcoming = item.status === "upcoming";
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "12px",
+                        borderRadius: "3px",
+                        background: isPaid
+                          ? "#10b981"
+                          : isUpcoming
+                            ? "transparent"
+                            : "rgba(30, 41, 59, 0.7)",
+                        border: isUpcoming
+                          ? "1px dashed rgba(100, 116, 139, 0.8)"
+                          : "1px solid transparent",
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 600,
+                        color: "#64748b",
+                        marginTop: "4px",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {item.monthLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
