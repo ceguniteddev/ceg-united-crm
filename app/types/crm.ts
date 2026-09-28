@@ -310,6 +310,8 @@ export interface AppSettings {
 export interface BureauScore {
   score: number | null;
   pulledAt: ISODate | null;
+  delta?: number;
+  prevScore?: number;
   change30d?: number;
   history?: { date: string; score: number }[];
 }

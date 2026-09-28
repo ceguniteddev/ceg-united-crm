@@ -16,7 +16,7 @@ const STAGES = [
 
 export function PipelineView() {
   const { t, labels } = useI18n();
-  const { clients, setSelectedClient, setView } = useCrmStore();
+  const { clients, setSelectedClient, setView, isSyncing } = useCrmStore();
 
   const handleOpenClient = (id: string) => {
     setSelectedClient(id);
@@ -59,21 +59,29 @@ export function PipelineView() {
               }}
             >
               <h3>{labels.stage(stage)}</h3>
-              <span className="badge">{stageClients.length}</span>
+              <span className="badge">
+                {isSyncing && clients.length === 0 ? "…" : stageClients.length}
+              </span>
             </div>
 
-            {stageClients.map((client) => (
-              <button
-                type="button"
-                className="pipeline-card"
-                key={client.id}
-                onClick={() => handleOpenClient(client.id)}
-              >
-                <b>{client.displayName}</b>
-                <small>{client.tags.join(" · ")}</small>
-                <span>{client.lastMessagePreview || t("NoMessagesYet")}</span>
-              </button>
-            ))}
+            {isSyncing && clients.length === 0 ? (
+              <div className="skeleton-wrap" style={{ padding: 0 }}>
+                <div className="skeleton" style={{ height: "64px" }} />
+              </div>
+            ) : (
+              stageClients.map((client) => (
+                <button
+                  type="button"
+                  className="pipeline-card"
+                  key={client.id}
+                  onClick={() => handleOpenClient(client.id)}
+                >
+                  <b>{client.displayName}</b>
+                  <small>{client.tags.join(" · ")}</small>
+                  <span>{client.lastMessagePreview || t("NoMessagesYet")}</span>
+                </button>
+              ))
+            )}
           </div>
         );
       })}

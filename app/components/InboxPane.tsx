@@ -22,6 +22,7 @@ export function InboxPane() {
     activeRepUid,
     reps,
     view,
+    isSyncing,
   } = useCrmStore();
 
   const currentRep = reps.find((r) => r.uid === activeRepUid);
@@ -45,10 +46,12 @@ export function InboxPane() {
         q &&
         ![
           c.displayName,
+          c.brainUid || "",
           ...c.handles.phones,
           ...c.handles.emails,
+          ...c.handles.waIds,
           ...c.tags,
-        ].some((x) => x.toLowerCase().includes(q))
+        ].some((x) => x && x.toLowerCase().includes(q))
       ) {
         return false;
       }
@@ -73,16 +76,36 @@ export function InboxPane() {
       <div className="list-heading">
         <h2>{view === "clients" ? t("Clients") : t("Inbox")}</h2>
         <span>
-          {filteredClients.length} {t("Conversations")}
+          {isSyncing && clients.length === 0
+            ? t("Loading")
+            : `${filteredClients.length} ${t("Conversations")}`}
         </span>
       </div>
 
-      <div className="mobile-search">
-        <input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={t("Search")}
-        />
+      <div className="inbox-search-wrap">
+        <div className="inbox-search-box">
+          <span className="inbox-search-icon" aria-hidden="true">
+            ⌕
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t("Search")}
+            aria-label={t("Search")}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="inbox-search-clear"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Chips */}
@@ -118,7 +141,13 @@ export function InboxPane() {
 
       {/* Conversation List */}
       <div className="inbox-list">
-        {filteredClients.length === 0 ? (
+        {isSyncing && clients.length === 0 ? (
+          <div className="skeleton-wrap" aria-label={t("Loading")}>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="skeleton" style={{ height: "64px" }} />
+            ))}
+          </div>
+        ) : filteredClients.length === 0 ? (
           <div className="empty">{t("NoResults")}</div>
         ) : (
           filteredClients.map((client) => {

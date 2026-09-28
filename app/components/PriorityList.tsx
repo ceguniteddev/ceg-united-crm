@@ -16,6 +16,7 @@ export function PriorityList() {
     setView,
     claimLead,
     setComposeChannel,
+    isSyncing,
   } = useCrmStore();
 
   const filtered = prioritySignals.filter((item) => {
@@ -97,7 +98,13 @@ export function PriorityList() {
       </div>
 
       {/* Action Queue Cards */}
-      {filtered.length === 0 ? (
+      {isSyncing && prioritySignals.length === 0 ? (
+        <div className="skeleton-wrap" aria-label={t("Loading")}>
+          <div className="skeleton" style={{ height: "96px" }} />
+          <div className="skeleton" style={{ height: "96px" }} />
+          <div className="skeleton" style={{ height: "96px" }} />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="empty">{t("NoResults")}</div>
       ) : (
         filtered.map((item, index) => {

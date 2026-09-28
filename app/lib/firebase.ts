@@ -29,9 +29,7 @@ export const app: FirebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const databaseId =
-  process.env.NEXT_PUBLIC_CRM_FIRESTORE_DATABASE_ID ||
-  process.env.FIREBASE_DB_NAME ||
-  "ceg-united-db-staging";
+  process.env.FIREBASE_DB_NAME || "ceg-united-db-staging";
 
 // Auth, Firestore & Storage instances
 export const auth: Auth = getAuth(app);

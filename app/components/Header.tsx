@@ -25,6 +25,22 @@ export function Header() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        const input =
+          document.querySelector<HTMLInputElement>(".inbox-search-box input") ||
+          document.querySelector<HTMLInputElement>(".desktop-search input");
+        input?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
@@ -304,11 +320,16 @@ export function Header() {
             type="button"
             className="icon-btn"
             aria-label={t("SearchTooltip")}
-            onClick={() =>
-              document
-                .querySelector<HTMLInputElement>(".mobile-search input")
-                ?.focus()
-            }
+            onClick={() => {
+              const input =
+                document.querySelector<HTMLInputElement>(
+                  ".inbox-search-box input",
+                ) ||
+                document.querySelector<HTMLInputElement>(
+                  ".desktop-search input",
+                );
+              input?.focus();
+            }}
           >
             ⌕
           </button>

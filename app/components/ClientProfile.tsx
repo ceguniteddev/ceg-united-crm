@@ -23,8 +23,21 @@ export function ClientProfile({
 }: ClientProfileProps) {
   const { t, labels } = useI18n();
   const { adminUser } = useAuth();
-  const { appSettings, tasks, activeRepUid, reps, refreshAiSummary, profiles } =
-    useCrmStore();
+  const {
+    appSettings,
+    tasks,
+    activeRepUid,
+    reps,
+    refreshAiSummary,
+    profiles,
+    loadClient360,
+  } = useCrmStore();
+
+  React.useEffect(() => {
+    if (!profiles[client.id]) {
+      loadClient360(client.id);
+    }
+  }, [client.id, profiles, loadClient360]);
 
   const rawProfile = profiles[client.id] || null;
   const currentRep = reps.find((r) => r.uid === activeRepUid);
@@ -158,8 +171,8 @@ export function ClientProfile({
             <h3>{t("CreditSnapshot")}</h3>
           </div>
           <div className="bureau-grid">
-            <CreditGauge bureau="equifax" data={profile?.credit.equifax} />
             <CreditGauge bureau="experian" data={profile?.credit.experian} />
+            <CreditGauge bureau="equifax" data={profile?.credit.equifax} />
             <CreditGauge
               bureau="transunion"
               data={profile?.credit.transunion}

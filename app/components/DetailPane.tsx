@@ -88,35 +88,15 @@ export function DetailPane() {
         <div>
           <h2>{client.displayName}</h2>
           <small>
-            {client.handles.phones[0] ||
-              client.handles.emails[0] ||
-              t("Client")}{" "}
-            · {client.tags.slice(0, 2).join(" · ")}
+            {[
+              client.handles.phones[0],
+              client.handles.emails[0],
+              ...client.tags.slice(0, 2),
+            ]
+              .filter(Boolean)
+              .join(" · ") || t("Client")}
           </small>
         </div>
-
-        <button
-          type="button"
-          className="icon-btn"
-          title={t("CallTooltip")}
-          onClick={handleCall}
-        >
-          ☎
-        </button>
-
-        <button
-          type="button"
-          className="btn primary"
-          onClick={() =>
-            setComposeChannel(
-              client.lastChannel && client.lastChannel !== "call"
-                ? client.lastChannel
-                : "sms",
-            )
-          }
-        >
-          {t("Reply")} ↗
-        </button>
       </div>
 
       {/* Subtabs Bar */}

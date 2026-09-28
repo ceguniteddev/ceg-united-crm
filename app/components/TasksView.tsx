@@ -16,6 +16,7 @@ export function TasksView() {
     setSelectedClient,
     setView,
     activeRepUid,
+    isSyncing,
   } = useCrmStore();
 
   const filteredTasks = tasks.filter((task) => {
@@ -63,7 +64,13 @@ export function TasksView() {
         </button>
       </div>
 
-      {filteredTasks.length === 0 ? (
+      {isSyncing && tasks.length === 0 ? (
+        <div className="skeleton-wrap" aria-label={t("Loading")}>
+          <div className="skeleton" style={{ height: "64px" }} />
+          <div className="skeleton" style={{ height: "64px" }} />
+          <div className="skeleton" style={{ height: "64px" }} />
+        </div>
+      ) : filteredTasks.length === 0 ? (
         <div className="empty">{t("NoActiveTasks")}</div>
       ) : (
         filteredTasks.map((task) => {

@@ -41,6 +41,8 @@ export function CrmShell() {
     reps,
     syncAdminUser,
     initSubscriptions,
+    searchQuery,
+    isSyncing,
   } = useCrmStore();
 
   useEffect(() => {
@@ -143,6 +145,23 @@ export function CrmShell() {
         );
 
       case "mine":
+        const qMine = searchQuery.toLowerCase().trim();
+        const mineClients = clients
+          .filter(
+            (c) =>
+              c.ownerRepId === activeRepUid || c.repIds.includes(activeRepUid),
+          )
+          .filter((c) => {
+            if (!qMine) return true;
+            return [
+              c.displayName,
+              c.brainUid || "",
+              ...c.handles.phones,
+              ...c.handles.emails,
+              ...c.tags,
+            ].some((x) => x && x.toLowerCase().includes(qMine));
+          });
+
         return (
           <div className="section-scroll">
             <div className="section-header">
@@ -151,13 +170,16 @@ export function CrmShell() {
               <p>{t("MineSubtitle")}</p>
             </div>
             <div>
-              {clients
-                .filter(
-                  (c) =>
-                    c.ownerRepId === activeRepUid ||
-                    c.repIds.includes(activeRepUid),
-                )
-                .map((c) => (
+              {isSyncing && clients.length === 0 ? (
+                <div className="skeleton-wrap" aria-label={t("Loading")}>
+                  <div className="skeleton" style={{ height: "64px" }} />
+                  <div className="skeleton" style={{ height: "64px" }} />
+                  <div className="skeleton" style={{ height: "64px" }} />
+                </div>
+              ) : mineClients.length === 0 ? (
+                <div className="empty">{t("NoResults")}</div>
+              ) : (
+                mineClients.map((c) => (
                   <button
                     type="button"
                     key={c.id}
@@ -177,7 +199,8 @@ export function CrmShell() {
                       </small>
                     </div>
                   </button>
-                ))}
+                ))
+              )}
             </div>
           </div>
         );

@@ -6,6 +6,7 @@ import type {
   AgentSettings,
   AppSettings,
   BrainProfile,
+  BureauScore,
   Channel,
   CrmClient,
   Interaction,
@@ -284,6 +285,159 @@ export async function fetchClientTasksAction(
 }
 
 /**
+ * Helper to normalize numbers from numeric strings or numbers
+ */
+function toNum(v?: unknown): number {
+  if (v === undefined || v === null || v === "") return 0;
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+
+interface CrsReportScore {
+  scoreValue?: string | number;
+  sourceType?: string;
+  scoreModel?: string;
+}
+
+interface CrsCreditFileDetail {
+  sourceType?: string;
+}
+
+interface CrsCreditFile {
+  creditFileDetail?: CrsCreditFileDetail;
+}
+
+interface CrsRepositoryIncluded {
+  experian?: boolean;
+  transunion?: boolean;
+  equifax?: boolean;
+}
+
+interface CrsResponseAlertMessage {
+  responseAlertMessageText?: string;
+  responseAlertMessageCategoryType?: string;
+  sourceType?: string;
+}
+
+interface CrsReportPayload {
+  scores?: CrsReportScore[];
+  score?: string | number;
+  creditFiles?: CrsCreditFile[];
+  repositoryIncluded?: CrsRepositoryIncluded;
+  responseAlertMessages?: CrsResponseAlertMessage[];
+  responseDetail?: { dateRequested?: string };
+}
+
+interface CrsReportDocument {
+  type?: string;
+  id: string;
+  report?: CrsReportPayload;
+  scores?: Record<string, number | string | undefined> & {
+    scoreValue?: string | number;
+  };
+  score?: string | number;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  [key: string]: unknown;
+}
+
+/**
+ * Identify bureau name from sourceType or string
+ */
+function bureauLabel(
+  sourceType?: string,
+): "Experian" | "Equifax" | "TransUnion" | string {
+  const s = (sourceType || "").toLowerCase();
+  if (s.includes("experian")) return "Experian";
+  if (s.includes("equifax")) return "Equifax";
+  if (s.includes("trans")) return "TransUnion";
+  return sourceType || "Unknown";
+}
+
+/**
+ * Determine bureau for a given report (referencing ClientCreditReport.tsx detectBureau)
+ */
+function detectBureau(
+  report?: CrsReportPayload | null,
+  fallbackType?: string,
+): "Experian" | "TransUnion" | "Equifax" | null {
+  if (!report) {
+    if (fallbackType) {
+      const b = bureauLabel(fallbackType);
+      if (b === "Experian" || b === "TransUnion" || b === "Equifax") return b;
+    }
+    return null;
+  }
+  const fromScore = report.scores?.[0]?.sourceType;
+  if (fromScore) {
+    const b = bureauLabel(fromScore);
+    if (b === "Experian" || b === "TransUnion" || b === "Equifax") return b;
+  }
+  const fromFile = report.creditFiles?.[0]?.creditFileDetail?.sourceType;
+  if (fromFile) {
+    const b = bureauLabel(fromFile);
+    if (b === "Experian" || b === "TransUnion" || b === "Equifax") return b;
+  }
+  const r = report.repositoryIncluded;
+  if (r) {
+    const truths = [
+      r.experian ? "Experian" : null,
+      r.transunion ? "TransUnion" : null,
+      r.equifax ? "Equifax" : null,
+    ].filter(Boolean) as ("Experian" | "TransUnion" | "Equifax")[];
+    if (truths.length === 1) return truths[0];
+  }
+  if (fallbackType) {
+    const b = bureauLabel(fallbackType);
+    if (b === "Experian" || b === "TransUnion" || b === "Equifax") return b;
+  }
+  return null;
+}
+
+/**
+ * Extracts FICO/bureau score from a report document
+ */
+function extractBureauScore(
+  reportDoc: CrsReportDocument | null | undefined,
+  bureau: string,
+): number | null {
+  if (!reportDoc) return null;
+  const rep = reportDoc.report;
+  if (rep?.scores && Array.isArray(rep.scores) && rep.scores.length > 0) {
+    const val = toNum(rep.scores[0]?.scoreValue);
+    if (val > 0) return val;
+  }
+  if (reportDoc.scores && typeof reportDoc.scores === "object") {
+    const bKey = bureau.toLowerCase();
+    const val = toNum(reportDoc.scores[bKey] ?? reportDoc.scores.scoreValue);
+    if (val > 0) return val;
+  }
+  if (rep?.score) {
+    const val = toNum(rep.score);
+    if (val > 0) return val;
+  }
+  if (reportDoc.score) {
+    const val = toNum(reportDoc.score);
+    if (val > 0) return val;
+  }
+  return null;
+}
+
+/**
+ * Extracts pull timestamp from a report document
+ */
+function extractBureauPulledAt(
+  reportDoc: CrsReportDocument | null | undefined,
+): string | null {
+  if (!reportDoc) return null;
+  const dr = reportDoc.report?.responseDetail?.dateRequested;
+  if (dr) return toIsoString(dr);
+  if (reportDoc.createdAt) return toIsoString(reportDoc.createdAt);
+  if (reportDoc.updatedAt) return toIsoString(reportDoc.updatedAt);
+  return null;
+}
+
+/**
  * Fetches 360 profile directly from live 'user', 'business-detail', 'user-funding-application', and 'crs-report-data'
  */
 export async function fetchClient360Action(
@@ -312,14 +466,190 @@ export async function fetchClient360Action(
       .get();
     const fundData = !fundSnap.empty ? fundSnap.docs[0].data() : null;
 
-    // Fetch credit reports
-    const crsSnap = await adminDb
-      .collection("crs-report-data")
-      .where("userId", "==", clientId)
-      .orderBy("createdAt", "desc")
-      .limit(1)
-      .get();
-    const crsData = !crsSnap.empty ? crsSnap.docs[0].data() : null;
+    // Fetch credit reports from 'crs-report-data'
+    const crsDocRef = adminDb.collection("crs-report-data").doc(clientId);
+    const crsDocSnap = await crsDocRef.get();
+
+    const crsReportDocs: CrsReportDocument[] = [];
+
+    const bureauKeys = ["equifax", "experian", "transunion"] as const;
+
+    // 1. Check direct subcollections: crs-report-data/{clientId}/{bureau}
+    await Promise.all(
+      bureauKeys.map(async (bKey) => {
+        try {
+          const subSnap = await crsDocRef
+            .collection(bKey)
+            .orderBy("createdAt", "desc")
+            .get();
+          subSnap.docs.forEach((d) => {
+            crsReportDocs.push({
+              type: bKey,
+              id: d.id,
+              ...d.data(),
+            });
+          });
+        } catch {
+          try {
+            const subSnap = await crsDocRef.collection(bKey).get();
+            subSnap.docs.forEach((d) => {
+              crsReportDocs.push({
+                type: bKey,
+                id: d.id,
+                ...d.data(),
+              });
+            });
+          } catch {
+            // ignore
+          }
+        }
+      }),
+    );
+
+    // 2. If subcollections empty, list all subcollections or inspect parent document
+    if (crsReportDocs.length === 0 && crsDocSnap.exists) {
+      try {
+        const subcols = await crsDocRef.listCollections();
+        await Promise.all(
+          subcols.map(async (colRef) => {
+            const qs = await colRef.orderBy("createdAt", "desc").get();
+            qs.docs.forEach((d) => {
+              crsReportDocs.push({
+                type: colRef.id,
+                id: d.id,
+                ...d.data(),
+              });
+            });
+          }),
+        );
+      } catch {
+        // ignore
+      }
+
+      if (crsReportDocs.length === 0) {
+        const parentData = crsDocSnap.data();
+        if (parentData) {
+          crsReportDocs.push({
+            type: parentData.type || "unknown",
+            id: crsDocSnap.id,
+            ...parentData,
+          });
+        }
+      }
+    }
+
+    // 3. Fallback to top-level crs-report-data query (where userId == clientId)
+    if (crsReportDocs.length === 0) {
+      try {
+        const topSnap = await adminDb
+          .collection("crs-report-data")
+          .where("userId", "==", clientId)
+          .orderBy("createdAt", "desc")
+          .get();
+        topSnap.docs.forEach((d) => {
+          crsReportDocs.push({
+            type: d.data().type,
+            id: d.id,
+            ...d.data(),
+          });
+        });
+      } catch {
+        try {
+          const topSnap = await adminDb
+            .collection("crs-report-data")
+            .where("userId", "==", clientId)
+            .get();
+          topSnap.docs.forEach((d) => {
+            crsReportDocs.push({
+              type: d.data().type,
+              id: d.id,
+              ...d.data(),
+            });
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    const buildBureauScore = (
+      bureau: "Equifax" | "Experian" | "TransUnion",
+    ): BureauScore => {
+      const matchingDocs = crsReportDocs
+        .filter((d) => {
+          const detected = detectBureau(d.report, d.type);
+          return detected === bureau;
+        })
+        .sort((a, b) => {
+          const timeA = a.createdAt
+            ? new Date(toIsoString(a.createdAt)).getTime()
+            : 0;
+          const timeB = b.createdAt
+            ? new Date(toIsoString(b.createdAt)).getTime()
+            : 0;
+          return timeB - timeA;
+        });
+
+      const latest = matchingDocs[0] || null;
+      const prev = matchingDocs[1] || null;
+
+      const score = latest ? extractBureauScore(latest, bureau) : null;
+      const prevScore = prev ? extractBureauScore(prev, bureau) : null;
+      const pulledAt = latest ? extractBureauPulledAt(latest) : null;
+      const delta =
+        score !== null && prevScore !== null ? score - prevScore : undefined;
+      const change30d = delta;
+
+      const history = matchingDocs
+        .map((d) => {
+          const s = extractBureauScore(d, bureau);
+          const p = extractBureauPulledAt(d);
+          return s !== null && p !== null ? { date: p, score: s } : null;
+        })
+        .filter((h): h is { date: string; score: number } => h !== null);
+
+      return {
+        score,
+        pulledAt,
+        delta,
+        prevScore: prevScore ?? undefined,
+        change30d,
+        history: history.length > 0 ? history : undefined,
+      };
+    };
+
+    const equifaxScore = buildBureauScore("Equifax");
+    const experianScore = buildBureauScore("Experian");
+    const transunionScore = buildBureauScore("TransUnion");
+
+    // Extract alert messages from reports
+    const crsAlerts: Array<{
+      id: string;
+      message: string;
+      severity: "info" | "warning" | "critical";
+      createdAt: string;
+    }> = [];
+
+    crsReportDocs.forEach((d, docIdx) => {
+      const msgs = d.report?.responseAlertMessages || [];
+      if (Array.isArray(msgs)) {
+        msgs.forEach((m, mIdx) => {
+          if (m?.responseAlertMessageText) {
+            const cat = (
+              m.responseAlertMessageCategoryType || ""
+            ).toLowerCase();
+            const isCritical = cat.includes("fraud") || cat.includes("block");
+            const bName = bureauLabel(m.sourceType || d.type);
+            crsAlerts.push({
+              id: `crs_alert_${docIdx}_${mIdx}`,
+              message: `${bName}: ${m.responseAlertMessageText}`,
+              severity: isCritical ? "critical" : "warning",
+              createdAt: toIsoString(d.createdAt),
+            });
+          }
+        });
+      }
+    });
 
     const baseProfile: BrainProfile = {
       uid: clientId,
@@ -330,24 +660,9 @@ export async function fetchClient360Action(
       email: u?.email || "",
       phone: u?.phoneNumber || "",
       credit: {
-        equifax: {
-          score: crsData?.scores?.equifax ?? 710,
-          pulledAt: crsData?.createdAt
-            ? toIsoString(crsData.createdAt)
-            : new Date().toISOString(),
-        },
-        experian: {
-          score: crsData?.scores?.experian ?? 725,
-          pulledAt: crsData?.createdAt
-            ? toIsoString(crsData.createdAt)
-            : new Date().toISOString(),
-        },
-        transunion: {
-          score: crsData?.scores?.transunion ?? 718,
-          pulledAt: crsData?.createdAt
-            ? toIsoString(crsData.createdAt)
-            : new Date().toISOString(),
-        },
+        equifax: equifaxScore,
+        experian: experianScore,
+        transunion: transunionScore,
       },
       business: {
         name:
@@ -403,7 +718,7 @@ export async function fetchClient360Action(
               : "Diagnostic",
         updatedAt: new Date().toISOString(),
       },
-      alerts: [],
+      alerts: crsAlerts,
       gated: {
         ssn: u?.ssn || null,
         dob: u?.dateOfBirth || null,
