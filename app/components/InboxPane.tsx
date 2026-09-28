@@ -64,8 +64,22 @@ export function InboxPane() {
       return clientIxs.some((i) => i.channel === channelFilter);
     })
     .sort((a, b) => {
-      const latestA = a.lastInboundAt || a.updatedAt;
-      const latestB = b.lastInboundAt || b.updatedAt;
+      const getLatestTime = (client: typeof a) => {
+        const clientIxs = interactions[client.id] || [];
+        const lastIx = clientIxs[clientIxs.length - 1];
+        const times = [
+          lastIx?.ts,
+          client.lastInboundAt,
+          client.lastOutboundAt,
+          client.updatedAt,
+          client.createdAt,
+        ].filter(Boolean) as string[];
+
+        return times.reduce((max, t) => (t > max ? t : max), "");
+      };
+
+      const latestA = getLatestTime(a);
+      const latestB = getLatestTime(b);
       return latestB.localeCompare(latestA);
     });
 
@@ -184,7 +198,11 @@ export function InboxPane() {
                 <div className="row-meta">
                   <time>
                     {relative(
-                      lastIx?.ts || client.lastInboundAt || client.updatedAt,
+                      lastIx?.ts ||
+                        client.lastInboundAt ||
+                        client.lastOutboundAt ||
+                        client.updatedAt ||
+                        client.createdAt,
                       locale,
                     )}
                   </time>

@@ -35,6 +35,7 @@ export function CrmShell() {
     dismissedPops,
     dismissScreenpop,
     clients,
+    interactions,
     prioritySignals,
     appSettings,
     activeRepUid,
@@ -160,6 +161,25 @@ export function CrmShell() {
               ...c.handles.emails,
               ...c.tags,
             ].some((x) => x && x.toLowerCase().includes(qMine));
+          })
+          .sort((a, b) => {
+            const getLatestTime = (client: typeof a) => {
+              const clientIxs = interactions[client.id] || [];
+              const lastIx = clientIxs[clientIxs.length - 1];
+              const times = [
+                lastIx?.ts,
+                client.lastInboundAt,
+                client.lastOutboundAt,
+                client.updatedAt,
+                client.createdAt,
+              ].filter(Boolean) as string[];
+
+              return times.reduce((max, t) => (t > max ? t : max), "");
+            };
+
+            const latestA = getLatestTime(a);
+            const latestB = getLatestTime(b);
+            return latestB.localeCompare(latestA);
           });
 
         return (

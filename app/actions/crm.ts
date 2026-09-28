@@ -64,15 +64,29 @@ const DEFAULT_AGENT_SETTINGS: AgentSettings = {
 /**
  * Normalizes Date or Firestore Timestamp to ISO string
  */
-function toIsoString(val: unknown): string {
-  if (!val) return new Date().toISOString();
+function toIsoString(val: unknown, fallback?: string): string {
+  if (!val) return fallback || new Date().toISOString();
   if (typeof val === "string") return val;
   const withToDate = val as { toDate?: () => Date };
   if (withToDate.toDate && typeof withToDate.toDate === "function") {
     return withToDate.toDate().toISOString();
   }
   if (val instanceof Date) return val.toISOString();
-  return new Date().toISOString();
+  return fallback || new Date().toISOString();
+}
+
+/**
+ * Normalizes nullable Date or Firestore Timestamp to ISO string or null
+ */
+function toNullableIsoString(val: unknown): string | null {
+  if (!val) return null;
+  if (typeof val === "string") return val;
+  const withToDate = val as { toDate?: () => Date };
+  if (withToDate.toDate && typeof withToDate.toDate === "function") {
+    return withToDate.toDate().toISOString();
+  }
+  if (val instanceof Date) return val.toISOString();
+  return null;
 }
 
 /**
@@ -105,7 +119,13 @@ export async function fetchCrmDataAction(): Promise<{
           "Client";
         const phone = u.phoneNumber || "";
         const email = u.email || "";
-        const createdAtIso = toIsoString(u.registrationDate);
+        const createdAtIso = toIsoString(u.registrationDate || u.createdAt);
+        const lastInboundAtIso = toNullableIsoString(u.lastInboundAt);
+        const lastOutboundAtIso = toNullableIsoString(u.lastOutboundAt);
+        const updatedAtIso = toIsoString(
+          u.updatedAt,
+          lastInboundAtIso || lastOutboundAtIso || createdAtIso,
+        );
 
         clientsList.push({
           id: uid,
@@ -128,18 +148,20 @@ export async function fetchCrmDataAction(): Promise<{
           ].filter(Boolean),
           vip: Boolean(u.vip),
           highPriority: Boolean(u.highPriority),
-          lastInboundAt: createdAtIso,
-          lastOutboundAt: null,
-          unreadCount: 0,
-          lastMessagePreview: u.businessName
-            ? `Business: ${u.businessName}`
-            : "Client profile active",
-          lastChannel: "sms",
+          lastInboundAt: lastInboundAtIso,
+          lastOutboundAt: lastOutboundAtIso,
+          unreadCount: typeof u.unreadCount === "number" ? u.unreadCount : 0,
+          lastMessagePreview:
+            u.lastMessagePreview ||
+            (u.businessName
+              ? `Business: ${u.businessName}`
+              : "Client profile active"),
+          lastChannel: u.lastChannel || "sms",
           metaWindowExpiresAt: {},
           aiSummary: null,
           smsConsent: u.consentConfirmTerms ?? true,
           createdAt: createdAtIso,
-          updatedAt: createdAtIso,
+          updatedAt: updatedAtIso,
         });
       } else if (role === "Admin" || role === "Broker") {
         repsList.push({
@@ -1120,6 +1142,16 @@ export async function sendCrmMessageAction(params: {
       .collection(`user/${clientId}/interactions`)
       .doc(id)
       .set(newIx);
+
+    await adminDb.collection("user").doc(clientId).set(
+      {
+        lastOutboundAt: now,
+        lastMessagePreview: body,
+        lastChannel: channel,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
   } catch (err) {
     console.error("sendCrmMessageAction DB Error:", err);
   }
@@ -1162,11 +1194,50 @@ export async function addCrmNoteAction(params: {
       .collection(`user/${clientId}/interactions`)
       .doc(id)
       .set(newNote);
+
+    await adminDb.collection("user").doc(clientId).set(
+      {
+        updatedAt: now,
+      },
+      { merge: true },
+    );
   } catch (err) {
     console.error("addCrmNoteAction DB Error:", err);
   }
 
   return newNote;
+}
+
+/**
+ * Marks all incoming messages for a client as read and resets unreadCount
+ */
+export async function markClientAsReadAction(clientId: string): Promise<void> {
+  try {
+    const now = new Date().toISOString();
+    await adminDb.collection("user").doc(clientId).set(
+      {
+        unreadCount: 0,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+
+    const unreadIxs = await adminDb
+      .collection(`user/${clientId}/interactions`)
+      .where("direction", "==", "in")
+      .where("status", "==", "received")
+      .get();
+
+    if (!unreadIxs.empty) {
+      const batch = adminDb.batch();
+      unreadIxs.docs.forEach((doc) => {
+        batch.update(doc.ref, { status: "read", readAt: now });
+      });
+      await batch.commit();
+    }
+  } catch (err) {
+    console.error(`markClientAsReadAction DB Error for ${clientId}:`, err);
+  }
 }
 
 /**

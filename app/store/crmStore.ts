@@ -32,6 +32,7 @@ import {
   updateCrmAgentSettingsAction,
   refreshCrmAiSummaryAction,
   setRepStatusAction,
+  markClientAsReadAction,
 } from "../actions/crm";
 
 export type View =
@@ -199,8 +200,25 @@ export const useCrmStore = create<CrmState>((set, get) => ({
   },
 
   setSelectedClient: (selectedClientId) => {
-    set({ selectedClientId, subtab: "profile" });
+    const currentView = get().view;
+    set({
+      selectedClientId,
+      subtab: currentView === "inbox" ? "timeline" : "profile",
+    });
     if (selectedClientId) {
+      const { clients } = get();
+      const targetClient = clients.find((c) => c.id === selectedClientId);
+      if (targetClient && targetClient.unreadCount > 0) {
+        set({
+          clients: clients.map((c) =>
+            c.id === selectedClientId ? { ...c, unreadCount: 0 } : c,
+          ),
+        });
+        markClientAsReadAction(selectedClientId).catch((err) =>
+          console.error("markClientAsReadAction error:", err),
+        );
+      }
+
       get().loadClientInteractions(selectedClientId);
       get().loadClientTasks(selectedClientId);
       get().loadClient360(selectedClientId);
