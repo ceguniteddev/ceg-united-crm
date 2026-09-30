@@ -2,7 +2,6 @@ import {
   initializeApp,
   getApps,
   getApp,
-  cert,
   type App,
 } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
