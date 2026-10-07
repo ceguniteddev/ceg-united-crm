@@ -16,6 +16,8 @@ import {
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { verifyAdminUserAction } from "../actions/auth";
+import AppError from "@/error/AppError";
+import { createEnterpriseAssessment } from "@/lib/captcha/captcha";
 
 export interface AdminUserData {
   uid: string;
@@ -31,7 +33,7 @@ interface AuthContextType {
   adminUser: AdminUserData | null;
   loading: boolean;
   isAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (token: string | null, email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
 }
 
@@ -90,7 +92,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [validateAndFetchAdmin]);
 
   const signIn = useCallback(
-    async (email: string, password: string): Promise<void> => {
+    async (
+      token: string | null,
+      email: string,
+      password: string,
+    ): Promise<void> => {
+      if (!token) {
+        throw new AppError("Failed to login. Please refresh the page.");
+      }
+
+      const captchaData = await createEnterpriseAssessment(token, "login");
+      if (!captchaData || captchaData.score < 0.5) {
+        throw new AppError("Captcha verification failed. Please try again.");
+      }
+
       const normalizedEmail = email.trim().toLowerCase();
 
       const userCredential = await signInWithEmailAndPassword(

@@ -616,3 +616,11 @@
     transition: none !important;
   }
 }
+
+/* Ensure Google reCAPTCHA Enterprise badge is above all layers */
+.grecaptcha-badge {
+  z-index: 99999999 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
