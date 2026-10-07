@@ -9,6 +9,8 @@ import { useAuth } from "../provider/AuthContext";
 import { CreditGauge } from "./CreditGauge";
 import { BrainLink } from "./BrainLink";
 import { redactProfile } from "../lib/permissions";
+import { PositiveAccountsCard } from "./PositiveAccountsCard";
+import { DisputesCard } from "./DisputesCard";
 
 interface ClientProfileProps {
   client: CrmClient;
@@ -178,6 +180,12 @@ export function ClientProfile({
               data={profile?.credit.transunion}
             />
           </div>
+
+          {/* Tradelines & Positive Account Coach Card */}
+          <PositiveAccountsCard brainUid={client.brainUid || undefined} />
+
+          {/* Credit Repair Dispute Module v3 Matrix Card */}
+          <DisputesCard brainUid={client.brainUid || undefined} />
         </section>
 
         {/* Business Overview */}

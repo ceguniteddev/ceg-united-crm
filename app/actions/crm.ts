@@ -1368,3 +1368,206 @@ export async function setRepStatusAction(
     console.error("setRepStatusAction error:", err);
   }
 }
+
+export async function fetchClientDisputesAction(
+  brainUid: string,
+): Promise<any[]> {
+  try {
+    if (!brainUid) return [];
+
+    const disputeLineItems: any[] = [];
+    try {
+      const snap = await adminDb
+        .collection(`users/${brainUid}/disputeLines`)
+        .get();
+      snap.forEach((d) => {
+        if (!d.id.startsWith("_")) {
+          disputeLineItems.push({ id: d.id, ...d.data() });
+        }
+      });
+    } catch (err) {
+      console.error("fetchClientDisputesAction disputeLines error:", err);
+    }
+
+    const letterItems: any[] = [];
+    try {
+      const letSnap = await adminDb
+        .collection("dispute-letter")
+        .where("userId", "==", brainUid)
+        .get();
+      letSnap.forEach((d) => letterItems.push({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.error("fetchClientDisputesAction dispute-letter error:", err);
+    }
+
+    const combined = [...disputeLineItems];
+    letterItems.forEach((letDoc) => {
+      if (!combined.some((c) => c.id === letDoc.id)) {
+        const bureau = (
+          letDoc.letterRecipient?.bureau || "Experian"
+        ).toLowerCase();
+        combined.push({
+          id: letDoc.id,
+          creditor:
+            letDoc.accounts?.[0]?.creditorName ||
+            letDoc.letterTitle ||
+            "Creditor",
+          bureau,
+          stage:
+            letDoc.status === "sent"
+              ? "S2_MAILED"
+              : letDoc.status === "delivered"
+              ? "S3_DELIVERED"
+              : "S0_AUDIT",
+          outcomeCode: letDoc.status === "resolved" ? "R01" : null,
+          timeline: {
+            n_resultsDue: letDoc.delivery?.estimatedDeliveryDate || null,
+          },
+        });
+      }
+    });
+
+    return combined;
+  } catch (err) {
+    console.error("fetchClientDisputesAction error:", err);
+    return [];
+  }
+}
+
+export async function fetchClientPositiveAccountsAction(
+  brainUid: string,
+): Promise<{
+  enrollments: any[];
+  refreshState: any;
+}> {
+  try {
+    if (!brainUid) return { enrollments: [], refreshState: null };
+
+    const positiveItems: any[] = [];
+    try {
+      const snap = await adminDb
+        .collection(`users/${brainUid}/positiveEnrollments`)
+        .get();
+      snap.forEach((d) => positiveItems.push({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.error(
+        "fetchClientPositiveAccountsAction positiveEnrollments error:",
+        err,
+      );
+    }
+
+    const tradelineItems: any[] = [];
+    try {
+      const tSnap = await adminDb
+        .collection("user-tradeline")
+        .where("userId", "==", brainUid)
+        .get();
+      tSnap.forEach((d) => tradelineItems.push({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.error(
+        "fetchClientPositiveAccountsAction user-tradeline error:",
+        err,
+      );
+    }
+
+    const combined = [...positiveItems];
+    tradelineItems.forEach((t) => {
+      if (!combined.some((c) => c.id === t.id)) {
+        combined.push({
+          id: t.id,
+          name: `${t.bankName || "Tradeline"} (${t.cardId || "Card"})`,
+          limit: t.creditLimit || 0,
+          balance: 0,
+          stage: t.status === "approved" ? "posted" : "waiting",
+          helpRequested: false,
+        });
+      }
+    });
+
+    let refreshState = null;
+    try {
+      const refSnap = await adminDb
+        .doc(`users/${brainUid}/credit/refresh`)
+        .get();
+      if (refSnap.exists) {
+        refreshState = refSnap.data();
+      }
+    } catch (err) {
+      console.error(
+        "fetchClientPositiveAccountsAction refreshState error:",
+        err,
+      );
+    }
+
+    return { enrollments: combined, refreshState };
+  } catch (err) {
+    console.error("fetchClientPositiveAccountsAction error:", err);
+    return { enrollments: [], refreshState: null };
+  }
+}
+
+export async function fetchReviewQueueAction(): Promise<any[]> {
+  try {
+    const snap = await adminDb.collection("crm_review_queue").get();
+    const list: any[] = [];
+    snap.forEach((d) => {
+      list.push({ id: d.id, ...d.data() });
+    });
+    return list.filter((x) => x.status === "pending");
+  } catch (err) {
+    console.error("fetchReviewQueueAction error:", err);
+    return [];
+  }
+}
+
+export async function approveReviewQueueItemAction(item: {
+  id: string;
+  uid: string;
+  suggestedOutcome: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    await adminDb.doc(`users/${item.uid}/disputeLines/${item.id}`).set(
+      {
+        outcomeCode: item.suggestedOutcome,
+        outcomeConfidence: 1.0,
+        needsReview: false,
+        stage: "S7_RESOLVED",
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+
+    await adminDb.collection("crm_review_queue").doc(item.id).delete();
+    return { success: true };
+  } catch (err: any) {
+    console.error("approveReviewQueueItemAction error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function overrideReviewQueueItemAction(params: {
+  item: { id: string; uid: string };
+  overrideOutcome: string;
+  vClearChecked: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { item, overrideOutcome, vClearChecked } = params;
+    await adminDb.doc(`users/${item.uid}/disputeLines/${item.id}`).set(
+      {
+        outcomeCode: overrideOutcome,
+        outcomeConfidence: 1.0,
+        needsReview: false,
+        violationConfirmed: overrideOutcome === "V-CLEAR" || vClearChecked,
+        stage: overrideOutcome === "V-CLEAR" ? "S8_VIOLATION" : "S7_RESOLVED",
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+
+    await adminDb.collection("crm_review_queue").doc(item.id).delete();
+    return { success: true };
+  } catch (err: any) {
+    console.error("overrideReviewQueueItemAction error:", err);
+    return { success: false, error: err.message };
+  }
+}

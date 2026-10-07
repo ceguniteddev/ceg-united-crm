@@ -755,7 +755,7 @@ export function I18nProvider({
       return t(map[s] || "StatusOffline");
     },
     priority: (p: PriorityType) => {
-      const map: Record<PriorityType, TranslationKey> = {
+      const map: Partial<Record<PriorityType, TranslationKey>> = {
         overdue_payment: "OverduePayment",
         high_priority: "HighPriority",
         missed_call: "MissedCall",

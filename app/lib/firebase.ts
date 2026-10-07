@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { initializeFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 
@@ -31,13 +30,8 @@ export const app: FirebaseApp =
 export const databaseId =
   process.env.FIREBASE_DB_NAME || "ceg-united-db-staging";
 
-// Auth, Firestore & Storage instances
+// Auth & Storage instances
 export const auth: Auth = getAuth(app);
-export const db: Firestore = initializeFirestore(
-  app,
-  { ignoreUndefinedProperties: true },
-  databaseId,
-);
 export const storage: FirebaseStorage = getStorage(app);
 
 // Analytics (browser only)
@@ -55,3 +49,4 @@ if (typeof window !== "undefined") {
 }
 
 export const analytics = analyticsInstance;
+

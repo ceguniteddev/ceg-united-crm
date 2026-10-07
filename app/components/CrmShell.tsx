@@ -17,6 +17,7 @@ import { MeView } from "./MeView";
 import { ScreenpopCard } from "./ScreenpopCard";
 import { ComposeModal } from "./ComposeModal";
 import { TaskModal } from "./TaskModal";
+import { ReviewQueueView } from "./ReviewQueueView";
 
 export function CrmShell() {
   const { t } = useI18n();
@@ -233,6 +234,12 @@ export function CrmShell() {
               <h1>{t("SLA")}</h1>
               <p>{t("SlaSubtitle")}</p>
             </div>
+
+            {/* Dispute Review Desk Queue */}
+            <div style={{ marginBottom: "24px" }}>
+              <ReviewQueueView />
+            </div>
+
             <div style={{ display: "grid", gap: "10px" }}>
               {prioritySignals
                 .filter((p) =>

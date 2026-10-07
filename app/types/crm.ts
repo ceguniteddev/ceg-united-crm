@@ -224,7 +224,10 @@ export type PriorityType =
   | "overdue_task"
   | "unanswered"
   | "new_lead"
-  | "buying_interest";
+  | "buying_interest"
+  | "dispute_deadline"
+  | "dispute_review"
+  | "dispute_step_overdue";
 
 export interface PrioritySignal {
   type: PriorityType;

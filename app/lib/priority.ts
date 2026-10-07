@@ -1,8 +1,11 @@
 import type { PrioritySignal, PriorityType } from "../types/crm";
 
 export const PRIORITY_WEIGHTS: Record<PriorityType, number> = {
+  dispute_deadline: 40,
   overdue_payment: 40,
+  dispute_review: 35,
   high_priority: 35,
+  dispute_step_overdue: 30,
   missed_call: 30,
   overdue_task: 30,
   unanswered: 25,
@@ -11,8 +14,11 @@ export const PRIORITY_WEIGHTS: Record<PriorityType, number> = {
 };
 
 export const PRIORITY_LABELS: Record<PriorityType, string> = {
+  dispute_deadline: "Approaching dispute deadline",
   overdue_payment: "Overdue payment",
+  dispute_review: "Dispute review required",
   high_priority: "High priority",
+  dispute_step_overdue: "Client dispute step overdue",
   missed_call: "Missed call",
   overdue_task: "Overdue task",
   unanswered: "Unanswered message",
@@ -21,8 +27,11 @@ export const PRIORITY_LABELS: Record<PriorityType, string> = {
 };
 
 export const PRIORITY_ORDER: PriorityType[] = [
+  "dispute_deadline",
   "overdue_payment",
+  "dispute_review",
   "high_priority",
+  "dispute_step_overdue",
   "missed_call",
   "overdue_task",
   "unanswered",
