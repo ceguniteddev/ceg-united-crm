@@ -1378,7 +1378,7 @@ export async function fetchClientDisputesAction(
     const disputeLineItems: any[] = [];
     try {
       const snap = await adminDb
-        .collection(`users/${brainUid}/disputeLines`)
+        .collection(`user/${brainUid}/disputeLines`)
         .get();
       snap.forEach((d) => {
         if (!d.id.startsWith("_")) {
@@ -1446,7 +1446,7 @@ export async function fetchClientPositiveAccountsAction(
     const positiveItems: any[] = [];
     try {
       const snap = await adminDb
-        .collection(`users/${brainUid}/positiveEnrollments`)
+        .collection(`user/${brainUid}/positiveEnrollments`)
         .get();
       snap.forEach((d) => positiveItems.push({ id: d.id, ...d.data() }));
     } catch (err) {
@@ -1487,7 +1487,7 @@ export async function fetchClientPositiveAccountsAction(
     let refreshState = null;
     try {
       const refSnap = await adminDb
-        .doc(`users/${brainUid}/credit/refresh`)
+        .doc(`user/${brainUid}/credit/refresh`)
         .get();
       if (refSnap.exists) {
         refreshState = refSnap.data();
@@ -1526,7 +1526,7 @@ export async function approveReviewQueueItemAction(item: {
   suggestedOutcome: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    await adminDb.doc(`users/${item.uid}/disputeLines/${item.id}`).set(
+    await adminDb.doc(`user/${item.uid}/disputeLines/${item.id}`).set(
       {
         outcomeCode: item.suggestedOutcome,
         outcomeConfidence: 1.0,
@@ -1552,7 +1552,7 @@ export async function overrideReviewQueueItemAction(params: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const { item, overrideOutcome, vClearChecked } = params;
-    await adminDb.doc(`users/${item.uid}/disputeLines/${item.id}`).set(
+    await adminDb.doc(`user/${item.uid}/disputeLines/${item.id}`).set(
       {
         outcomeCode: overrideOutcome,
         outcomeConfidence: 1.0,
