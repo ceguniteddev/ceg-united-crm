@@ -1,0 +1,45 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 1
+  maxInstances: 5
+  concurrency: 80
+  cpu: 2
+  memoryMiB: 4096
+env:
+  - variable: FIREBASE_PROJECT_ID
+    value: ceg-united-llc-prod
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_DB_NAME
+    value: ceg-united-db-production
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_STORAGE_NAME
+    value: ceg-united-llc-prod.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ENVIRONMENT
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_ENVIRONMENT
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://api.app.cegunited.com
+    availability:
+      - BUILD
+
+  - variable: ALLOWED_ORIGINS
+    value: https://app.cegunited.com,https://crm.cegunited.com
+    availability:
+      - BUILD
+      - RUNTIME
