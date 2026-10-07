@@ -19,63 +19,9 @@ function getAdminApp(): App {
     return getApp();
   }
 
-  // Check if Base64 encoded service account is provided
-  if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
-    try {
-      const decoded = Buffer.from(
-        process.env.FIREBASE_PRIVATE_KEY_BASE64,
-        "base64",
-      ).toString("utf-8");
-      const credentials = JSON.parse(decoded);
-      return initializeApp({
-        credential: cert({
-          projectId: credentials.project_id,
-          clientEmail: credentials.client_email,
-          privateKey: formatPrivateKey(credentials.private_key),
-        }),
-        storageBucket:
-          process.env.FIREBASE_STORAGE_BUCKET ||
-          process.env.FIREBASE_STORAGE_NAME ||
-          `${credentials.project_id}.firebasestorage.app`,
-        projectId: credentials.project_id,
-      });
-    } catch (e) {
-      console.error(
-        "Failed to initialize Firebase Admin with FIREBASE_PRIVATE_KEY_BASE64:",
-        e,
-      );
-    }
-  }
-
-  // Fallback for individual environment variables
-  if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-    const projectId =
-      process.env.FIREBASE_PROJECT_ID ||
-      process.env.GOOGLE_CLOUD_PROJECT ||
-      "ceg-united-llc-prod";
-    return initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
-      }),
-      storageBucket:
-        process.env.FIREBASE_STORAGE_BUCKET ||
-        process.env.FIREBASE_STORAGE_NAME ||
-        `${projectId}.firebasestorage.app`,
-      projectId,
-    });
-  }
-
   return initializeApp({
-    projectId:
-      process.env.FIREBASE_PROJECT_ID ??
-      process.env.GOOGLE_CLOUD_PROJECT ??
-      "ceg-united-llc-prod",
-    storageBucket:
-      process.env.FIREBASE_STORAGE_BUCKET ||
-      process.env.FIREBASE_STORAGE_NAME ||
-      "ceg-united-llc-prod.firebasestorage.app",
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_NAME,
   });
 }
 
