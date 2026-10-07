@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchClientPositiveAccountsAction } from "../actions/crm";
-import { TrendingUp, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import {
+  fetchClientPositiveAccountsAction,
+  markClientPositiveEnrollmentPostedAction,
+} from "../actions/crm";
+import { TrendingUp, CheckCircle2, Clock, AlertCircle, Check } from "lucide-react";
 
 export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [refreshState, setRefreshState] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!brainUid) {
@@ -40,6 +44,31 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
       clearInterval(interval);
     };
   }, [brainUid]);
+
+  const handleMarkPosted = async (enrollmentId: string) => {
+    if (!brainUid || updatingId) return;
+    setUpdatingId(enrollmentId);
+    try {
+      const res = await markClientPositiveEnrollmentPostedAction(
+        brainUid,
+        enrollmentId,
+      );
+      if (res.success) {
+        setEnrollments((prev) =>
+          prev.map((e) =>
+            e.id === enrollmentId ? { ...e, stage: "posted" } : e,
+          ),
+        );
+      } else {
+        alert(res.error || "Failed to mark enrollment as posted");
+      }
+    } catch (err: any) {
+      console.error("Error marking enrollment posted:", err);
+      alert(err.message || "Failed to update enrollment status");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const activeCount = enrollments.filter((e) => e.stage !== "posted").length;
   const postedCount = enrollments.filter((e) => e.stage === "posted").length;
@@ -159,7 +188,7 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
                     Limit: ${(e.limit || 0).toLocaleString()} · Balance: ${(e.balance || 0).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span
                     style={{
                       textTransform: "uppercase",
@@ -187,6 +216,36 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
                       HELP
                     </span>
                   )}
+                  {e.stage !== "posted" && (
+                    <button
+                      onClick={() => handleMarkPosted(e.id)}
+                      disabled={updatingId === e.id}
+                      style={{
+                        background: "rgba(16, 185, 129, 0.15)",
+                        border: "1px solid rgba(16, 185, 129, 0.4)",
+                        color: "#34d399",
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        cursor: updatingId === e.id ? "not-allowed" : "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        transition: "all 0.15s ease",
+                      }}
+                      title="Verify and mark this account as posted to credit report"
+                    >
+                      {updatingId === e.id ? (
+                        "Updating…"
+                      ) : (
+                        <>
+                          <Check style={{ width: "10px", height: "10px" }} />
+                          Mark Posted
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -196,3 +255,4 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
     </section>
   );
 }
+

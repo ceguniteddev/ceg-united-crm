@@ -1506,6 +1506,72 @@ export async function fetchClientPositiveAccountsAction(
   }
 }
 
+export async function markClientPositiveEnrollmentPostedAction(
+  brainUid: string,
+  enrollmentId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!brainUid || !enrollmentId) {
+      return { success: false, error: "Missing brainUid or enrollmentId" };
+    }
+
+    const now = new Date().toISOString();
+
+    // 1. Check if it's an enrollment under user/{brainUid}/positiveEnrollments
+    const eRef = adminDb.doc(
+      `user/${brainUid}/positiveEnrollments/${enrollmentId}`,
+    );
+    const eSnap = await eRef.get();
+    if (eSnap.exists) {
+      await eRef.set(
+        {
+          stage: "posted",
+          matchedAccountId: "admin-verified",
+          updatedAt: now,
+          version: (eSnap.get("version") || 1) + 1,
+        },
+        { merge: true },
+      );
+      return { success: true };
+    }
+
+    // 2. Check if it's a tradeline under user-tradeline
+    const tRef = adminDb.doc(`user-tradeline/${enrollmentId}`);
+    const tSnap = await tRef.get();
+    if (tSnap.exists) {
+      await tRef.set(
+        {
+          status: "approved",
+          updatedAt: now,
+        },
+        { merge: true },
+      );
+      return { success: true };
+    }
+
+    // 3. Fallback: create or merge document directly in positiveEnrollments as posted
+    await eRef.set(
+      {
+        id: enrollmentId,
+        providerId: enrollmentId,
+        stage: "posted",
+        matchedAccountId: "admin-verified",
+        updatedAt: now,
+        version: 1,
+      },
+      { merge: true },
+    );
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("markClientPositiveEnrollmentPostedAction error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to mark enrollment as posted",
+    };
+  }
+}
+
 export async function fetchReviewQueueAction(): Promise<any[]> {
   try {
     const snap = await adminDb.collection("crm_review_queue").get();

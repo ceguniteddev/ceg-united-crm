@@ -34,8 +34,25 @@ export async function verifyAdminUserAction(idToken: string): Promise<{
       };
     }
 
-    // Role check: Only Admin
-    if (userData?.role !== "Admin") {
+    // Role check: Support Admin, Owner, Manager, Broker
+    const rawRole = (
+      userData?.role ||
+      decoded.crmRole ||
+      (decoded.admin ? "Admin" : "") ||
+      ""
+    )
+      .toString()
+      .trim();
+    const normalizedRole = rawRole.toLowerCase();
+    const isStaffOrAdmin =
+      normalizedRole === "admin" ||
+      normalizedRole === "owner" ||
+      normalizedRole === "manager" ||
+      normalizedRole === "broker" ||
+      normalizedRole === "senior_rep" ||
+      normalizedRole === "rep";
+
+    if (!isStaffOrAdmin) {
       return {
         success: false,
         error:
@@ -44,26 +61,27 @@ export async function verifyAdminUserAction(idToken: string): Promise<{
     }
 
     const displayName =
-      `${userData.firstName || ""} ${userData.lastName || ""}`.trim() ||
+      `${userData?.firstName || ""} ${userData?.lastName || ""}`.trim() ||
       decoded.name ||
       decoded.email?.split("@")[0] ||
       "Administrator";
 
     const adminUser: AdminUserData = {
       uid,
-      email: decoded.email || userData.email || "",
+      email: decoded.email || userData?.email || "",
       displayName,
       role: "Admin",
-      activeStatus: userData.activeStatus || "Active",
-      phoneNumber: userData.phoneNumber,
+      activeStatus: userData?.activeStatus || "Active",
+      phoneNumber: userData?.phoneNumber,
     };
 
     return { success: true, adminUser };
   } catch (err: unknown) {
     console.error("verifyAdminUserAction Error:", err);
+    const errMsg = err instanceof Error ? err.message : "Authentication verification failed.";
     return {
       success: false,
-      error: "Authentication verification failed.",
+      error: errMsg,
     };
   }
 }
