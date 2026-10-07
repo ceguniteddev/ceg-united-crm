@@ -4,45 +4,23 @@ import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 
 const firebaseConfigProd = {
-  apiKey:
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyBCaC_CvDUy75nBT4oRlYQksNe3SDHOcbw",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "ceg-united-llc-prod.firebaseapp.com",
-  projectId:
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "ceg-united-llc-prod",
-  storageBucket:
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    "ceg-united-llc-prod.firebasestorage.app",
-  messagingSenderId:
-    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "516470017287",
-  appId:
-    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-    "1:516470017287:web:832520958098e585f949a2",
-  measurementId:
-    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-NY8EHMK975",
+  apiKey: "AIzaSyD5_7Ro5j9O-Om4WhvAqzE7yetKiZ7t0yA",
+  authDomain: "ceg-united-llc-prod.firebaseapp.com",
+  projectId: "ceg-united-llc-prod",
+  storageBucket: "ceg-united-llc-prod.firebasestorage.app",
+  messagingSenderId: "516470017287",
+  appId: "1:516470017287:web:499badccab197cccf949a2",
+  measurementId: "G-157BMQ4J17",
 };
 
 const firebaseConfigStaging = {
-  apiKey:
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyCxaMKdokoSQ9Ztraigdwgsfc8YWlYHdqQ",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "cegunitedllc.firebaseapp.com",
-  projectId:
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "cegunitedllc",
-  storageBucket:
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    "cegunitedllc.firebasestorage.app",
-  messagingSenderId:
-    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "898492424787",
-  appId:
-    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-    "1:898492424787:web:305c0ba09c8de0694bdca6",
-  measurementId:
-    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-X6TW83PVFY",
+  apiKey: "AIzaSyB1NpKx3XX1ei-EOsmRrdj6N-3yy5fdddE",
+  authDomain: "cegunitedllc.firebaseapp.com",
+  projectId: "cegunitedllc",
+  storageBucket: "cegunitedllc.firebasestorage.app",
+  messagingSenderId: "898492424787",
+  appId: "1:898492424787:web:380b9fae0ba7f0b44bdca6",
+  measurementId: "G-58EJ9Y19W1",
 };
 
 export const firebaseConfig =
@@ -79,4 +57,3 @@ if (typeof window !== "undefined") {
 }
 
 export const analytics = analyticsInstance;
-

@@ -2253,3 +2253,11 @@ body {
   color: var(--muted, #8b97b0);
   font-size: 13px;
 }
+
+/* reCAPTCHA badge styling */
+.grecaptcha-badge {
+  z-index: 99999999 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+

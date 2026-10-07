@@ -34,12 +34,12 @@ env:
       - RUNTIME
 
   - variable: NEXT_PUBLIC_APP_URL
-    value: https://api.app.cegunited.com
+    value: https://crm.cegunited.com
     availability:
       - BUILD
-
-  - variable: ALLOWED_ORIGINS
-    value: https://app.cegunited.com,https://crm.cegunited.com
+      - RUNTIME
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: 6LexnuMtAAAAAIhJEmeI_Btj8LGKQnC_N6brKty6
     availability:
       - BUILD
       - RUNTIME

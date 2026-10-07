@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "../../provider/AuthContext";
+import { getCaptchaTokenRegistration } from "@/lib/captcha";
 import {
   AlertIcon,
   EyeIcon,
@@ -53,7 +54,8 @@ export default function AuthCard({ onAuthed }: Props) {
 
     setBusy(true);
     try {
-      await signIn(email, password);
+      const token = await getCaptchaTokenRegistration("login");
+      await signIn(token, email, password);
       onAuthed?.();
     } catch (err: unknown) {
       console.error("CRM Login Error:", err);
