@@ -342,6 +342,14 @@ export interface BrainProfile {
     monthlyDeposits?: number | null;
     businessCredit?: string | null;
     duns?: string | null;
+    businessCreditScore?: number | null;
+    allBusinesses?: Array<{
+      id: string;
+      name: string;
+      ein?: string | null;
+      state?: string | null;
+      phone?: string | null;
+    }>;
   };
   billing: {
     status:
@@ -359,6 +367,7 @@ export interface BrainProfile {
     lastPaidAt?: ISODate | null;
     lifetimeValue?: number | null;
     paymentMethod?: string | null;
+    walletBalance?: number | null;
     paymentHistory?: {
       monthLabel: string;
       status: "paid" | "unpaid" | "upcoming" | "empty";
@@ -376,10 +385,13 @@ export interface BrainProfile {
     title: string;
     fitScore: number;
     reason: string;
+    amount?: number | null;
+    status?: string | null;
   }[];
   notes: {
     id: string;
     author: string;
+    authorEmail?: string | null;
     text: string;
     createdAt: ISODate;
   }[];
@@ -406,6 +418,24 @@ export interface BrainProfile {
     ein: string | null;
     bankAccounts: { bank: string; last4: string; full: string | null }[];
   };
+  documents?: {
+    name: string;
+    path: string;
+    contentType?: string;
+    size?: number;
+    updated?: string;
+    signedUrl?: string;
+  }[];
+  fundingApplications?: Array<{
+    id: string;
+    fundingType?: string;
+    status?: string;
+    appliedDate?: string;
+    businessAmountFunding?: number;
+    personalAmountFunding?: number;
+    interestedProduct?: string;
+    referenceNumber?: string;
+  }>;
 }
 
 export interface Client360 {
