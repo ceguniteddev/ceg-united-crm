@@ -25,6 +25,7 @@ export function DetailPane() {
     appSettings,
     activeRepUid,
     reps,
+    profiles,
     setTaskModalOpen,
     toggleTaskStatus,
   } = useCrmStore();
@@ -101,7 +102,7 @@ export function DetailPane() {
 
       {/* Subtabs Bar */}
       <div className="subtabs">
-        {(["profile", "timeline", "details", "tasks"] as Subtab[]).map((s) => (
+        {(["profile", "timeline", "details", "documents", "tasks"] as Subtab[]).map((s) => (
           <button
             key={s}
             type="button"
@@ -114,7 +115,9 @@ export function DetailPane() {
                 ? t("Timeline")
                 : s === "details"
                   ? t("Details")
-                  : t("Tasks")}
+                  : s === "documents"
+                    ? "Documents"
+                    : t("Tasks")}
           </button>
         ))}
       </div>
@@ -172,6 +175,76 @@ export function DetailPane() {
               <div style={{ marginTop: "12px" }}>
                 <BrainLink client={client} settings={appSettings} role={role} />
               </div>
+            </section>
+          </div>
+        )}
+
+        {subtab === "documents" && (
+          <div className="profile-grid">
+            <section className="card wide">
+              <div className="card-head">
+                <h3>Uploaded Documents (Cloud Storage)</h3>
+              </div>
+              {!profiles[client.id]?.documents ||
+              profiles[client.id].documents!.length === 0 ? (
+                <p className="muted">No uploaded documents found for this client.</p>
+              ) : (
+                <div style={{ display: "grid", gap: "8px" }}>
+                  {profiles[client.id].documents!.map((doc, idx) => (
+                    <div
+                      key={doc.path || idx}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 14px",
+                        background: "rgba(30, 41, 59, 0.5)",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 255, 255, 0.05)",
+                      }}
+                    >
+                      <div>
+                        <b style={{ color: "#f8fafc", fontSize: "13px" }}>
+                          {doc.name}
+                        </b>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "#94a3b8",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {doc.contentType || "Document"} ·{" "}
+                          {doc.size
+                            ? `${(doc.size / 1024).toFixed(1)} KB`
+                            : "—"}
+                          {doc.updated
+                            ? ` · ${new Date(doc.updated).toLocaleDateString()}`
+                            : ""}
+                        </div>
+                      </div>
+                      {doc.signedUrl && (
+                        <a
+                          href={doc.signedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn"
+                          style={{
+                            fontSize: "11px",
+                            padding: "4px 10px",
+                            textDecoration: "none",
+                            color: "#38bdf8",
+                            border: "1px solid rgba(56, 189, 248, 0.3)",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          View ↗
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}

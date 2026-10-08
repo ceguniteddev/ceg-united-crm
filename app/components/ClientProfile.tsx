@@ -135,6 +135,19 @@ export function ClientProfile({
                   )
                 : "—"}
             </b>
+            {profile?.billing?.walletBalance != null && (
+              <span
+                style={{
+                  fontSize: "10px",
+                  color: "#34d399",
+                  fontWeight: 600,
+                  display: "block",
+                  marginTop: "2px",
+                }}
+              >
+                Wallet: {money(profile.billing.walletBalance)}
+              </span>
+            )}
           </div>
           <div>
             <small>{t("OpenTasks")}</small>
@@ -209,23 +222,40 @@ export function ClientProfile({
             >
               {t("Business")}
             </h3>
-            {(profile?.business?.entityType || profile?.business?.state) && (
-              <span
-                style={{
-                  padding: "2px 10px",
-                  borderRadius: "9999px",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: "#cbd5e1",
-                  background: "rgba(30, 41, 59, 0.8)",
-                  border: "1px solid rgba(51, 65, 85, 0.8)",
-                }}
-              >
-                {[profile?.business?.entityType, profile?.business?.state]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
-            )}
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              {profile?.business?.businessCreditScore != null && (
+                <span
+                  style={{
+                    padding: "2px 8px",
+                    borderRadius: "9999px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: "#38bdf8",
+                    background: "rgba(56, 189, 248, 0.15)",
+                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                  }}
+                >
+                  Score {profile.business.businessCreditScore}
+                </span>
+              )}
+              {(profile?.business?.entityType || profile?.business?.state) && (
+                <span
+                  style={{
+                    padding: "2px 10px",
+                    borderRadius: "9999px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#cbd5e1",
+                    background: "rgba(30, 41, 59, 0.8)",
+                    border: "1px solid rgba(51, 65, 85, 0.8)",
+                  }}
+                >
+                  {[profile?.business?.entityType, profile?.business?.state]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              )}
+            </div>
           </div>
 
           <div style={{ marginTop: "6px" }}>
@@ -678,15 +708,130 @@ export function ClientProfile({
                   }}
                 >
                   <b>{rec.title}</b>
-                  <span className="lane-pill fit">
-                    {rec.fitScore}% {t("Fit")}
-                  </span>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    {rec.amount != null && rec.amount > 0 && (
+                      <span style={{ fontSize: "12px", color: "#34d399", fontWeight: 700 }}>
+                        {money(rec.amount)}
+                      </span>
+                    )}
+                    <span className="lane-pill fit">
+                      {rec.status || `${rec.fitScore}% ${t("Fit")}`}
+                    </span>
+                  </div>
                 </div>
                 <small>{rec.reason}</small>
               </div>
             ))
           ) : (
             <p className="muted">{t("NoSuggestions")}</p>
+          )}
+        </section>
+
+        {/* Funding Applications */}
+        {profile?.fundingApplications && profile.fundingApplications.length > 0 && (
+          <section className="card wide">
+            <div className="card-head">
+              <h3>Funding Applications</h3>
+              <span className="badge">{profile.fundingApplications.length} Active</span>
+            </div>
+            <div style={{ display: "grid", gap: "8px" }}>
+              {profile.fundingApplications.map((app) => (
+                <div
+                  key={app.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 14px",
+                    background: "rgba(30, 41, 59, 0.4)",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 255, 255, 0.05)",
+                  }}
+                >
+                  <div>
+                    <b style={{ color: "#f8fafc", fontSize: "13px" }}>
+                      {app.fundingType || app.interestedProduct || "Funding Application"}
+                    </b>
+                    <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+                      Ref: {app.referenceNumber || app.id}
+                      {app.appliedDate ? ` · Applied ${new Date(app.appliedDate).toLocaleDateString()}` : ""}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    {(app.businessAmountFunding || app.personalAmountFunding) && (
+                      <span style={{ fontSize: "12px", color: "#34d399", fontWeight: 700 }}>
+                        {money(app.businessAmountFunding || app.personalAmountFunding || 0)}
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        background:
+                          app.status === "Approved" || app.status === "Offer Accepted"
+                            ? "rgba(16, 185, 129, 0.2)"
+                            : "rgba(59, 130, 246, 0.2)",
+                        color:
+                          app.status === "Approved" || app.status === "Offer Accepted"
+                            ? "#34d399"
+                            : "#60a5fa",
+                      }}
+                    >
+                      {app.status || "Submitted"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Internal Staff Notes */}
+        <section className="card wide">
+          <div className="card-head">
+            <h3>Internal Notes (Unified)</h3>
+            <span className="badge">{profile?.notes?.length || 0}</span>
+          </div>
+          {profile?.notes && profile.notes.length > 0 ? (
+            <div style={{ display: "grid", gap: "8px" }}>
+              {profile.notes.map((note) => (
+                <div
+                  key={note.id}
+                  style={{
+                    padding: "10px 14px",
+                    background: "rgba(30, 41, 59, 0.4)",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 255, 255, 0.05)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <b style={{ fontSize: "12px", color: "#f8fafc" }}>
+                      {note.author}
+                    </b>
+                    <small style={{ fontSize: "11px", color: "#94a3b8" }}>
+                      {new Date(note.createdAt).toLocaleDateString()}{" "}
+                      {new Date(note.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </small>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1" }}>
+                    {note.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">No internal notes logged yet.</p>
           )}
         </section>
 

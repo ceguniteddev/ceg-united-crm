@@ -11,25 +11,33 @@ export function AgentPanel() {
     useCrmStore();
   const [testing, setTesting] = useState(false);
 
+  const channels = agentSettings?.channels || [];
+  const allowedTools = agentSettings?.allowedTools || [];
+  const confidenceThreshold = agentSettings?.confidenceThreshold ?? 0.85;
+  const isEnabled = Boolean(agentSettings?.enabled);
+  const provider = agentSettings?.provider || "openai";
+  const mcpServerUrl = agentSettings?.mcpServerUrl || "";
+  const slaFallbackMinutes = agentSettings?.slaFallbackMinutes ?? 10;
+  const logs = agentLogs || [];
+
   const toggleMaster = () => {
-    updateAgentSettings({ enabled: !agentSettings.enabled });
+    updateAgentSettings({ enabled: !isEnabled });
   };
 
-  const setProvider = (provider: "openai" | "xai" | "anthropic") => {
+  const setProvider = (selectedProvider: "openai" | "xai" | "anthropic") => {
     const model =
-      provider === "openai"
+      selectedProvider === "openai"
         ? "gpt-6-astra"
-        : provider === "xai"
+        : selectedProvider === "xai"
           ? "grok-4"
           : "claude-3-7-sonnet";
-    updateAgentSettings({ provider, model });
+    updateAgentSettings({ provider: selectedProvider, model });
   };
 
   const toggleChannel = (ch: Channel) => {
-    const current = agentSettings.channels || [];
-    const next = current.includes(ch)
-      ? current.filter((c) => c !== ch)
-      : [...current, ch];
+    const next = channels.includes(ch)
+      ? channels.filter((c) => c !== ch)
+      : [...channels, ch];
     updateAgentSettings({ channels: next });
   };
 
@@ -47,7 +55,7 @@ export function AgentPanel() {
     <div className="agent">
       {/* Master Toggle Card */}
       <section
-        className={`card agent-master ${agentSettings.enabled ? "on" : ""}`}
+        className={`card agent-master ${isEnabled ? "on" : ""}`}
       >
         <div className="am-row">
           <div className="am-bot">✧</div>
@@ -55,20 +63,20 @@ export function AgentPanel() {
             <div className="am-title">
               {t("AgentMasterSwitch")}
               <span
-                className={`pay-pill ${agentSettings.enabled ? "current" : "failed"}`}
+                className={`pay-pill ${isEnabled ? "current" : "failed"}`}
               >
-                ● {t(agentSettings.enabled ? "AgentOn" : "AgentOff")}
+                ● {t(isEnabled ? "AgentOn" : "AgentOff")}
               </span>
             </div>
             <small>
-              {agentSettings.enabled
-                ? t("AgentReplying", { count: agentSettings.channels.length })
+              {isEnabled
+                ? t("AgentReplying", { count: channels.length })
                 : t("AgentDisabled")}
             </small>
           </div>
           <button
             type="button"
-            className={`switch ${agentSettings.enabled ? "on" : ""}`}
+            className={`switch ${isEnabled ? "on" : ""}`}
             onClick={toggleMaster}
             aria-label={t("AgentMasterSwitch")}
           >
@@ -106,7 +114,7 @@ export function AgentPanel() {
 
           <button
             type="button"
-            className={`prov ${agentSettings.provider === "openai" ? "sel" : ""}`}
+            className={`prov ${provider === "openai" ? "sel" : ""}`}
             onClick={() => setProvider("openai")}
           >
             <div className="radio" />
@@ -118,7 +126,7 @@ export function AgentPanel() {
 
           <button
             type="button"
-            className={`prov ${agentSettings.provider === "xai" ? "sel" : ""}`}
+            className={`prov ${provider === "xai" ? "sel" : ""}`}
             onClick={() => setProvider("xai")}
           >
             <div className="radio" />
@@ -130,7 +138,7 @@ export function AgentPanel() {
 
           <button
             type="button"
-            className={`prov ${agentSettings.provider === "anthropic" ? "sel" : ""}`}
+            className={`prov ${provider === "anthropic" ? "sel" : ""}`}
             onClick={() => setProvider("anthropic")}
           >
             <div className="radio" />
@@ -156,14 +164,14 @@ export function AgentPanel() {
           </div>
 
           <div className="mono-box">
-            <span>{agentSettings.mcpServerUrl}</span>
+            <span>{mcpServerUrl}</span>
             <span style={{ color: "#6ee7b7" }}>● {t("Connected")}</span>
           </div>
 
           <div style={{ marginTop: "14px" }}>
             <span className="field-lbl">{t("ToolsTheBot")}</span>
             <div className="tools">
-              {agentSettings.allowedTools.map((tool) => (
+              {allowedTools.map((tool) => (
                 <code key={tool}>{tool}</code>
               ))}
             </div>
@@ -180,7 +188,7 @@ export function AgentPanel() {
             <div>
               <b>{t("Confidence")}</b>
               <small style={{ display: "block", color: "var(--ink-3)" }}>
-                {Math.round(agentSettings.confidenceThreshold * 100)}% threshold
+                {Math.round(confidenceThreshold * 100)}% threshold
               </small>
             </div>
             <input
@@ -188,7 +196,7 @@ export function AgentPanel() {
               className="range"
               min="50"
               max="99"
-              value={Math.round(agentSettings.confidenceThreshold * 100)}
+              value={Math.round(confidenceThreshold * 100)}
               onChange={(e) =>
                 updateAgentSettings({
                   confidenceThreshold: Number(e.target.value) / 100,
@@ -201,7 +209,7 @@ export function AgentPanel() {
             <div>
               <b>
                 {t("FallbackMode", {
-                  minutes: agentSettings.slaFallbackMinutes,
+                  minutes: slaFallbackMinutes,
                 })}
               </b>
               <small style={{ display: "block", color: "var(--ink-3)" }}>
@@ -226,7 +234,7 @@ export function AgentPanel() {
               "telegram",
             ] as Channel[]
           ).map((ch) => {
-            const active = agentSettings.channels.includes(ch);
+            const active = channels.includes(ch);
             return (
               <div className="ct" key={ch}>
                 <span>{labels.channel(ch)}</span>
@@ -248,14 +256,14 @@ export function AgentPanel() {
           <div className="card-head">
             <h3>{t("RecentAiActivity")}</h3>
             <span className="mini-badge ai">
-              {t("EventsCount", { count: agentLogs.length })}
+              {t("EventsCount", { count: logs.length })}
             </span>
           </div>
 
-          {agentLogs.length === 0 ? (
+          {logs.length === 0 ? (
             <p className="muted">{t("NoAgentActivity")}</p>
           ) : (
-            agentLogs.map((log) => (
+            logs.map((log) => (
               <div className="alog" key={log.id}>
                 <div>
                   <div

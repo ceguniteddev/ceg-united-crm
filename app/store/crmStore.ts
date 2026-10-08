@@ -46,7 +46,7 @@ export type View =
   | "tasks"
   | "me";
 
-export type Subtab = "profile" | "timeline" | "details" | "tasks";
+export type Subtab = "profile" | "timeline" | "details" | "tasks" | "documents";
 
 interface CrmState {
   // Navigation & Selection
@@ -299,11 +299,25 @@ export const useCrmStore = create<CrmState>((set, get) => ({
           ? currentSelected
           : null;
 
+      const safeAgentSettings: AgentSettings = {
+        ...DEFAULT_AGENT_SETTINGS,
+        ...(data.agentSettings || {}),
+        allowedTools: Array.isArray(data.agentSettings?.allowedTools)
+          ? data.agentSettings.allowedTools
+          : DEFAULT_AGENT_SETTINGS.allowedTools,
+        channels: Array.isArray(data.agentSettings?.channels)
+          ? data.agentSettings.channels
+          : DEFAULT_AGENT_SETTINGS.channels,
+        alwaysEscalate: Array.isArray(data.agentSettings?.alwaysEscalate)
+          ? data.agentSettings.alwaysEscalate
+          : DEFAULT_AGENT_SETTINGS.alwaysEscalate,
+      };
+
       set({
         clients: data.clients,
         prioritySignals: data.prioritySignals,
         appSettings: data.appSettings,
-        agentSettings: data.agentSettings,
+        agentSettings: safeAgentSettings,
         agentLogs: data.agentLogs,
         reps: data.reps,
         selectedClientId: nextSelected,
@@ -585,9 +599,25 @@ export const useCrmStore = create<CrmState>((set, get) => ({
 
   updateAgentSettings: async (newSettings: Partial<AgentSettings>) => {
     const { agentSettings } = get();
-    const updated = {
+    const updated: AgentSettings = {
+      ...DEFAULT_AGENT_SETTINGS,
       ...agentSettings,
       ...newSettings,
+      allowedTools: Array.isArray(newSettings.allowedTools)
+        ? newSettings.allowedTools
+        : Array.isArray(agentSettings?.allowedTools)
+          ? agentSettings.allowedTools
+          : DEFAULT_AGENT_SETTINGS.allowedTools,
+      channels: Array.isArray(newSettings.channels)
+        ? newSettings.channels
+        : Array.isArray(agentSettings?.channels)
+          ? agentSettings.channels
+          : DEFAULT_AGENT_SETTINGS.channels,
+      alwaysEscalate: Array.isArray(newSettings.alwaysEscalate)
+        ? newSettings.alwaysEscalate
+        : Array.isArray(agentSettings?.alwaysEscalate)
+          ? agentSettings.alwaysEscalate
+          : DEFAULT_AGENT_SETTINGS.alwaysEscalate,
       updatedAt: new Date().toISOString(),
     };
     set({ agentSettings: updated, toastMessage: "AI Agent settings saved" });
