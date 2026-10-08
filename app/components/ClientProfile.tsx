@@ -279,15 +279,7 @@ export function ClientProfile({
             )}
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "14px 16px",
-              marginTop: "18px",
-              paddingTop: "2px",
-            }}
-          >
+          <div className="profile-subgrid">
             <div>
               <div
                 style={{
@@ -471,15 +463,7 @@ export function ClientProfile({
             )}
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "14px 16px",
-              marginTop: "18px",
-              paddingTop: "2px",
-            }}
-          >
+          <div className="profile-subgrid">
             <div>
               <div
                 style={{

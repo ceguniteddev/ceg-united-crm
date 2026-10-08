@@ -50,6 +50,8 @@ export function DisputesCard({ brainUid }: { brainUid?: string }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "8px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
           paddingBottom: "10px",
           marginBottom: "12px",

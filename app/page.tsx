@@ -17,8 +17,9 @@ export default function HomePage() {
       <div
         style={{
           display: "flex",
-          height: "100vh",
-          width: "100vw",
+          height: "100dvh",
+          minHeight: "100dvh",
+          width: "100%",
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#060b18",

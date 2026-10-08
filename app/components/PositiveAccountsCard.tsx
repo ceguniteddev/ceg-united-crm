@@ -121,7 +121,13 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(95px, 1fr))",
+              gap: "8px",
+            }}
+          >
             <div
               style={{
                 background: "rgba(15, 23, 42, 0.5)",
@@ -176,19 +182,21 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  padding: "8px 12px",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  padding: "10px 12px",
                   background: "rgba(30, 41, 59, 0.4)",
                   borderRadius: "6px",
                   fontSize: "12px",
                 }}
               >
-                <div>
+                <div style={{ minWidth: "160px", flex: "1 1 auto" }}>
                   <b style={{ color: "#f8fafc" }}>{e.name}</b>
                   <div style={{ fontSize: "11px", color: "#94a3b8" }}>
                     Limit: ${(e.limit || 0).toLocaleString()} · Balance: ${(e.balance || 0).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <span
                     style={{
                       textTransform: "uppercase",
@@ -224,14 +232,15 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
                         background: "rgba(16, 185, 129, 0.15)",
                         border: "1px solid rgba(16, 185, 129, 0.4)",
                         color: "#34d399",
-                        padding: "3px 8px",
+                        padding: "5px 10px",
                         borderRadius: "4px",
-                        fontSize: "10px",
+                        fontSize: "11px",
                         fontWeight: 600,
                         cursor: updatingId === e.id ? "not-allowed" : "pointer",
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "4px",
+                        minHeight: "32px",
                         transition: "all 0.15s ease",
                       }}
                       title="Verify and mark this account as posted to credit report"
@@ -240,7 +249,7 @@ export function PositiveAccountsCard({ brainUid }: { brainUid?: string }) {
                         "Updating…"
                       ) : (
                         <>
-                          <Check style={{ width: "10px", height: "10px" }} />
+                          <Check style={{ width: "11px", height: "11px" }} />
                           Mark Posted
                         </>
                       )}

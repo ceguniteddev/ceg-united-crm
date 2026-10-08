@@ -143,8 +143,16 @@ export function ReviewQueueView() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
+        <div style={{ minWidth: "220px", flex: "1 1 auto" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#f8fafc" }}>
             Dispute Review Desk Queue
           </h2>
@@ -160,6 +168,7 @@ export function ReviewQueueView() {
             borderRadius: "12px",
             fontSize: "12px",
             fontWeight: 600,
+            whiteSpace: "nowrap",
           }}
         >
           {items.length} Pending 1-Day SLA Reviews
@@ -199,9 +208,9 @@ export function ReviewQueueView() {
                 gap: "12px",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                     <span style={{ fontWeight: 700, fontSize: "14px", color: "#f8fafc" }}>
                       {item.creditor} ({item.accountNumberMasked})
                     </span>
@@ -237,7 +246,7 @@ export function ReviewQueueView() {
                     color: "#94a3b8",
                   }}
                 >
-                  "{item.extractedSnippet}…"
+                  &ldquo;{item.extractedSnippet}…&rdquo;
                 </div>
               )}
 
@@ -267,12 +276,13 @@ export function ReviewQueueView() {
                   onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
                   style={{
                     fontSize: "12px",
-                    padding: "6px 12px",
+                    padding: "8px 14px",
                     borderRadius: "6px",
                     background: "transparent",
                     border: "1px solid rgba(255, 255, 255, 0.15)",
                     color: "#f8fafc",
                     cursor: "pointer",
+                    minHeight: "36px",
                   }}
                 >
                   Override…
@@ -282,13 +292,14 @@ export function ReviewQueueView() {
                   onClick={() => handleApprove(item)}
                   style={{
                     fontSize: "12px",
-                    padding: "6px 12px",
+                    padding: "8px 14px",
                     borderRadius: "6px",
                     background: "#059669",
                     color: "#ffffff",
                     border: "none",
                     fontWeight: 600,
                     cursor: "pointer",
+                    minHeight: "36px",
                   }}
                 >
                   Approve Suggested ({item.suggestedOutcome})
