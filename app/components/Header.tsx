@@ -7,7 +7,7 @@ import { useAuth } from "../provider/AuthContext";
 import { initials } from "../lib/utils";
 
 export function Header() {
-  const { t, labels } = useI18n();
+  const { t, labels, locale } = useI18n();
   const { adminUser, logOut } = useAuth();
   const {
     searchQuery,
@@ -17,12 +17,14 @@ export function Header() {
     activeRepUid,
     reps,
     selectedClientId,
+    setSelectedClient,
     clients,
     view,
   } = useCrmStore();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -42,7 +44,10 @@ export function Header() {
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const clickedInsideDesktop = desktopMenuRef.current?.contains(target);
+      const clickedInsideMobile = mobileMenuRef.current?.contains(target);
+      if (!clickedInsideDesktop && !clickedInsideMobile) {
         setMenuOpen(false);
       }
     };
@@ -86,6 +91,131 @@ export function Header() {
   const displayName = adminUser?.displayName || currentRep.name;
   const displayEmail = adminUser?.email || currentRep.email;
 
+  const renderDropdownMenu = (isMobile = false) => (
+    <div
+      className="user-dropdown-menu"
+      style={{
+        position: "absolute",
+        top: "calc(100% + 8px)",
+        right: isMobile ? "0px" : 0,
+        width: isMobile ? "min(260px, calc(100vw - 28px))" : "240px",
+        background: "#121d34",
+        border: "1px solid rgba(255, 255, 255, 0.12)",
+        borderRadius: "14px",
+        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6)",
+        padding: "12px",
+        zIndex: 100,
+        backdropFilter: "blur(20px)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        animation: "cegCardIn 180ms ease-out",
+      }}
+    >
+      <div
+        style={{
+          padding: "4px 6px 8px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+        }}
+      >
+        <b
+          style={{
+            display: "block",
+            fontSize: "13px",
+            color: "#f5f8ff",
+          }}
+        >
+          {displayName}
+        </b>
+        <small
+          style={{
+            display: "block",
+            fontSize: "11px",
+            color: "#8a9ab8",
+            marginTop: "2px",
+            wordBreak: "break-all",
+          }}
+        >
+          {displayEmail}
+        </small>
+        <span
+          style={{
+            display: "inline-block",
+            fontSize: "10px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            color: "#93c5fd",
+            background: "rgba(59, 130, 246, 0.16)",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            padding: "2px 6px",
+            borderRadius: "4px",
+            marginTop: "6px",
+          }}
+        >
+          System Administrator
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className="dropdown-item"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          background: "transparent",
+          border: 0,
+          color: "#c7d2e6",
+          fontSize: "13px",
+          fontWeight: 500,
+          padding: "8px 10px",
+          borderRadius: "8px",
+          cursor: "pointer",
+          textAlign: "left",
+          width: "100%",
+          minHeight: "40px",
+        }}
+        onClick={() => {
+          setView("me");
+          setMenuOpen(false);
+        }}
+      >
+        <span>👤</span>
+        <span>Profile & Settings</span>
+      </button>
+
+      <button
+        type="button"
+        className="dropdown-item danger"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          background: "rgba(239, 68, 68, 0.08)",
+          border: "1px solid rgba(239, 68, 68, 0.2)",
+          color: "#fca5a5",
+          fontSize: "13px",
+          fontWeight: 600,
+          padding: "8px 10px",
+          borderRadius: "8px",
+          cursor: "pointer",
+          textAlign: "left",
+          width: "100%",
+          marginTop: "4px",
+          minHeight: "40px",
+        }}
+        onClick={async () => {
+          setMenuOpen(false);
+          await logOut();
+        }}
+      >
+        <span>🚪</span>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  );
+
   return (
     <>
       {/* Desktop Header */}
@@ -116,7 +246,7 @@ export function Header() {
 
         <div
           className="header-right"
-          ref={menuRef}
+          ref={desktopMenuRef}
           style={{ position: "relative" }}
         >
           <button
@@ -153,201 +283,120 @@ export function Header() {
             <span className="avatar tiny">{initials(displayName)}</span>
           </button>
 
-          {/* User Profile / Sign-out Dropdown Menu */}
-          {menuOpen && (
-            <div
-              className="user-dropdown-menu"
-              style={{
-                position: "absolute",
-                top: "calc(100% + 8px)",
-                right: 0,
-                width: "240px",
-                background: "#121d34",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
-                borderRadius: "14px",
-                boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6)",
-                padding: "12px",
-                zIndex: 100,
-                backdropFilter: "blur(20px)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                animation: "cegCardIn 180ms ease-out",
-              }}
-            >
-              <div
-                style={{
-                  padding: "4px 6px 8px",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-                }}
-              >
-                <b
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    color: "#f5f8ff",
-                  }}
-                >
-                  {displayName}
-                </b>
-                <small
-                  style={{
-                    display: "block",
-                    fontSize: "11px",
-                    color: "#8a9ab8",
-                    marginTop: "2px",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {displayEmail}
-                </small>
-                <span
-                  style={{
-                    display: "inline-block",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    color: "#93c5fd",
-                    background: "rgba(59, 130, 246, 0.16)",
-                    border: "1px solid rgba(59, 130, 246, 0.3)",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    marginTop: "6px",
-                  }}
-                >
-                  System Administrator
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="dropdown-item"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  background: "transparent",
-                  border: 0,
-                  color: "#c7d2e6",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  padding: "8px 10px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  width: "100%",
-                }}
-                onClick={() => {
-                  setView("me");
-                  setMenuOpen(false);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background =
-                    "rgba(255, 255, 255, 0.06)";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#c7d2e6";
-                }}
-              >
-                <span>👤</span>
-                <span>Profile & Settings</span>
-              </button>
-
-              <button
-                type="button"
-                className="dropdown-item danger"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  background: "rgba(239, 68, 68, 0.08)",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                  color: "#fca5a5",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  padding: "8px 10px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  width: "100%",
-                  marginTop: "4px",
-                }}
-                onClick={async () => {
-                  setMenuOpen(false);
-                  await logOut();
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.16)";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)";
-                  e.currentTarget.style.color = "#fca5a5";
-                }}
-              >
-                <span>🚪</span>
-                <span>Sign Out</span>
-              </button>
-            </div>
-          )}
+          {/* User Profile / Sign-out Dropdown Menu (Desktop) */}
+          {menuOpen && renderDropdownMenu(false)}
         </div>
       </header>
 
       {/* Mobile Header */}
       <div className="mobile-header">
-        <button
-          type="button"
-          className="brand-mark"
-          onClick={() => setView("inbox")}
-        >
-          ▥
-        </button>
-        <div>
-          <strong>{getTitle()}</strong>
-          <small>
-            {selectedClient
-              ? t("ClientIntelligence")
-              : view === "inbox"
-                ? `${clients.length} ${t("Conversations")}`
-                : "CEG United · CRM"}
-          </small>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+          {selectedClient ? (
+            <button
+              type="button"
+              className="mobile-back-btn"
+              style={{
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid var(--border)",
+                color: "var(--ink)",
+                fontSize: "22px",
+                lineHeight: 1,
+                width: "34px",
+                height: "34px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                borderRadius: "9px",
+                padding: 0,
+                flex: "none",
+              }}
+              aria-label={t("Back")}
+              onClick={() => setSelectedClient(null)}
+            >
+              ‹
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="brand-mark"
+              style={{ margin: 0, flex: "none" }}
+              onClick={() => setView("inbox")}
+            >
+              ▥
+            </button>
+          )}
+          <div className="header-title-wrap" style={{ minWidth: 0, flex: 1 }}>
+            <strong
+              style={{
+                fontSize: "15px",
+                lineHeight: 1.25,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "block",
+                color: "#f8fafc",
+              }}
+            >
+              {selectedClient ? selectedClient.displayName : getTitle()}
+            </strong>
+            <small
+              style={{
+                fontSize: "11px",
+                lineHeight: 1.2,
+                color: "var(--ink-3)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "block",
+                marginTop: "1px",
+              }}
+            >
+              {selectedClient
+                ? [
+                    selectedClient.handles.phones[0],
+                    selectedClient.handles.emails[0],
+                    ...selectedClient.tags.slice(0, 1),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || t("ClientIntelligence")
+                : view === "inbox"
+                  ? `${clients.length} ${t("Conversations")}`
+                  : "CEG United · CRM"}
+            </small>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label={t("SearchTooltip")}
-            onClick={() => {
-              const input =
-                document.querySelector<HTMLInputElement>(
-                  ".inbox-search-box input",
-                ) ||
-                document.querySelector<HTMLInputElement>(
-                  ".desktop-search input",
-                );
-              input?.focus();
-            }}
-          >
-            ⌕
-          </button>
+
+        {/* Right side: User Avatar only */}
+        <div
+          style={{ display: "flex", alignItems: "center", flex: "none", position: "relative" }}
+          ref={mobileMenuRef}
+        >
           <button
             type="button"
             className="avatar tiny"
             style={{
-              width: "30px",
-              height: "30px",
-              fontSize: "10px",
+              width: "34px",
+              height: "34px",
+              fontSize: "12px",
               cursor: "pointer",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
+              border: menuOpen
+                ? "2px solid #3b82f6"
+                : "1px solid rgba(255, 255, 255, 0.18)",
+              boxShadow: menuOpen ? "0 0 0 2px rgba(59, 130, 246, 0.3)" : "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            aria-label="User profile and sign out"
+            aria-label={`${displayName} - User profile and sign out`}
+            aria-expanded={menuOpen}
             onClick={() => setMenuOpen((prev) => !prev)}
           >
             {initials(displayName)}
           </button>
+
+          {/* User Profile / Sign-out Dropdown Menu (Mobile) */}
+          {menuOpen && renderDropdownMenu(true)}
         </div>
       </div>
     </>

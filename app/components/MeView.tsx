@@ -33,7 +33,7 @@ export function MeView() {
   const STATUSES: RepStatus[] = ["available", "busy", "away", "offline"];
 
   return (
-    <div style={{ maxWidth: "800px", margin: "auto" }}>
+    <div style={{ maxWidth: "800px", margin: "auto", paddingBottom: "60px" }}>
       {/* Rep Hero Card */}
       <div className="me-hero">
         <div className="hero-avatar">{initials(displayName)}</div>
@@ -76,10 +76,12 @@ export function MeView() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
+              gap: "12px",
             }}
           >
-            <div>
-              <b style={{ display: "block", fontSize: "13px" }}>
+            <div style={{ minWidth: "200px", flex: "1 1 auto" }}>
+              <b style={{ display: "block", fontSize: "13px", wordBreak: "break-all" }}>
                 {adminUser?.email || email}
               </b>
               <small className="muted">
@@ -94,6 +96,7 @@ export function MeView() {
                 color: "#fca5a5",
                 background: "rgba(239, 68, 68, 0.12)",
                 padding: "8px 16px",
+                minHeight: "38px",
               }}
               onClick={async () => {
                 await logOut();

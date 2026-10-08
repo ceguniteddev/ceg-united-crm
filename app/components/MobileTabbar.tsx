@@ -20,7 +20,7 @@ export function MobileTabbar() {
   ];
 
   return (
-    <nav className="mobile-tabbar">
+    <nav className="mobile-tabbar" aria-label="Mobile Navigation">
       {TABS.map(([v, icon, label]) => {
         const isPriority = v === "priority";
         const isActive = view === v;
@@ -31,6 +31,8 @@ export function MobileTabbar() {
             type="button"
             className={`mobile-tab ${isPriority ? "center" : ""} ${isActive ? "active" : ""}`}
             onClick={() => setView(v)}
+            aria-label={label}
+            aria-current={isActive ? "page" : undefined}
           >
             <span className={isPriority ? "prio-fab" : ""}>{icon}</span>
             <small>{label}</small>
