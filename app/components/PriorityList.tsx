@@ -17,6 +17,7 @@ export function PriorityList() {
     claimLead,
     setComposeChannel,
     isSyncing,
+    clients,
   } = useCrmStore();
 
   const filtered = prioritySignals.filter((item) => {
@@ -48,9 +49,9 @@ export function PriorityList() {
     if (item.kind === "lead" && item.leadId) {
       claimLead(item.leadId);
     } else if (item.clientId) {
+      const client = clients.find((c) => c.id === item.clientId);
       setSelectedClient(item.clientId);
-      setView("inbox");
-      setComposeChannel("sms");
+      setComposeChannel(client?.lastChannel || "sms");
     }
   };
 

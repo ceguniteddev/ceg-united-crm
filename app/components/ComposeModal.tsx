@@ -73,7 +73,7 @@ export function ComposeModal({
         </div>
 
         {/* Channel selector chips */}
-        <div className="chip-scroll">
+        <div className="chip-scroll compose-channels">
           {CHANNELS.map((ch) => (
             <button
               key={ch}

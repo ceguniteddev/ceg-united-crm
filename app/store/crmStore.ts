@@ -230,7 +230,15 @@ export const useCrmStore = create<CrmState>((set, get) => ({
   setPriorityFilter: (priorityFilter) => set({ priorityFilter }),
   setTaskFilter: (taskFilter) => set({ taskFilter }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
-  setComposeChannel: (composeChannel) => set({ composeChannel }),
+  setComposeChannel: (composeChannel) => {
+    set({ composeChannel });
+    if (!composeChannel) {
+      const currentView = get().view;
+      if (currentView !== "inbox" && currentView !== "clients") {
+        set({ selectedClientId: null });
+      }
+    }
+  },
   setToast: (toastMessage) => set({ toastMessage }),
   setTaskModalOpen: (isTaskModalOpen) => set({ isTaskModalOpen }),
   setActiveRep: (activeRepUid) => set({ activeRepUid }),
@@ -407,6 +415,7 @@ export const useCrmStore = create<CrmState>((set, get) => ({
     };
 
     const clientIxs = interactions[clientId] || [];
+    const currentView = get().view;
     set({
       interactions: {
         ...interactions,
@@ -425,6 +434,9 @@ export const useCrmStore = create<CrmState>((set, get) => ({
           : c,
       ),
       composeChannel: null,
+      ...(currentView !== "inbox" && currentView !== "clients"
+        ? { selectedClientId: null }
+        : {}),
       toastMessage: "Message sent successfully",
     });
 
@@ -473,12 +485,16 @@ export const useCrmStore = create<CrmState>((set, get) => ({
     };
 
     const clientIxs = interactions[clientId] || [];
+    const currentView = get().view;
     set({
       interactions: {
         ...interactions,
         [clientId]: [...clientIxs, tempNote],
       },
       composeChannel: null,
+      ...(currentView !== "inbox" && currentView !== "clients"
+        ? { selectedClientId: null }
+        : {}),
       toastMessage: "Internal note saved",
     });
 

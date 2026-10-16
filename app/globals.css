@@ -1813,7 +1813,7 @@ body {
 }
 .ceg-console .compose-sheet,
 .ceg-console .task-form {
-  width: min(560px, calc(100% - 30px));
+  width: min(580px, calc(100% - 30px));
   max-height: 90dvh;
   overflow: auto;
   background: #121d34;
@@ -1839,8 +1839,27 @@ body {
   font-size: 10px;
   letter-spacing: 0.1em;
 }
-.ceg-console .compose-sheet .chip-scroll {
+.ceg-console .compose-sheet .chip-scroll,
+.ceg-console .compose-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 4px 0 15px;
+  overflow: visible;
+  white-space: normal;
+}
+.ceg-console .compose-sheet .chip {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 120ms ease;
+}
+.ceg-console .compose-sheet .chip:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--ink);
 }
 .ceg-console .compose-sheet textarea {
   width: 100%;

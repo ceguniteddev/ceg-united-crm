@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 import type { Channel, PriorityType, RepStatus, Role } from "../types/crm";
+import { PRIORITY_LABELS } from "./priority";
 
 export const en = {
   Inbox: "Inbox",
@@ -186,8 +187,11 @@ export const en = {
   Telegram: "Telegram",
   Voice: "Voice calls",
   AllPriority: "All",
+  DisputeDeadline: "Dispute deadline",
   OverduePayment: "Overdue payment",
+  DisputeReview: "Dispute review",
   HighPriority: "High priority",
+  DisputeStepOverdue: "Dispute step overdue",
   OverdueTask: "Overdue task",
   UnansweredMessage: "Unanswered message",
   BuyingInterest: "Buying interest",
@@ -514,8 +518,11 @@ export const es: { [K in keyof typeof en]: string } = {
   Telegram: "Telegram",
   Voice: "Llamadas de voz",
   AllPriority: "Todos",
+  DisputeDeadline: "Plazo de disputa",
   OverduePayment: "Pago vencido",
+  DisputeReview: "Revisión de disputa",
   HighPriority: "Alta prioridad",
+  DisputeStepOverdue: "Paso de disputa vencido",
   OverdueTask: "Tarea vencida",
   UnansweredMessage: "Mensaje sin responder",
   BuyingInterest: "Interés de compra",
@@ -755,16 +762,20 @@ export function I18nProvider({
       return t(map[s] || "StatusOffline");
     },
     priority: (p: PriorityType) => {
-      const map: Partial<Record<PriorityType, TranslationKey>> = {
+      const map: Record<PriorityType, TranslationKey> = {
+        dispute_deadline: "DisputeDeadline",
         overdue_payment: "OverduePayment",
+        dispute_review: "DisputeReview",
         high_priority: "HighPriority",
+        dispute_step_overdue: "DisputeStepOverdue",
         missed_call: "MissedCall",
         overdue_task: "OverdueTask",
         unanswered: "UnansweredMessage",
         buying_interest: "BuyingInterest",
         new_lead: "NewLead",
       };
-      return t(map[p] || "AllPriority");
+      const key = map[p];
+      return key ? t(key) : (PRIORITY_LABELS[p] || p);
     },
     stage: (st: string) => {
       const key = st.charAt(0).toUpperCase() + st.slice(1).toLowerCase();
